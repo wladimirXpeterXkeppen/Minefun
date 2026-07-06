@@ -1,0 +1,248 @@
+// カスタムダッシュ機能 - コンソール実行用
+(function() {
+    // 基本クラスの定義（元のコードの 'a' クラスに相当）
+    class BaseModule {
+        constructor(name, category, options = {}) {
+            this.name = name;
+            this.category = category;
+            this.options = options;
+            this.isEnabled = false;
+        }
+        
+        enable() {
+            if (this.isEnabled) return;
+            this.isEnabled = true;
+            this.onEnable();
+        }
+        
+        disable() {
+            if (!this.isEnabled) return;
+            this.isEnabled = false;
+            this.onDisable();
+        }
+        
+        toggle() {
+            if (this.isEnabled) {
+                this.disable();
+            } else {
+                this.enable();
+            }
+        }
+        
+        onEnable() {}
+        onDisable() {}
+    }
+    
+    // ゲームオブジェクトへのアクセス（元のコードの 'o' オブジェクトに相当）
+    // 実際のゲーム環境に合わせて調整が必要
+    const gameWorld = window.gameWorld || window.o?.gameWorld || {};
+    
+    // カスタムダッシュモジュール
+    class ModCustomDash extends BaseModule {
+        constructor() {
+            super("CustomDash", "Movement", {
+                "Dash Key": "Shift",
+                "KeepSprint": true,
+                "OmniSprint": true,
+                "Show Settings": false
+            });
+            
+            this.settingsUI = null;
+            this.isSettingsOpen = false;
+            this.dashKey = "Shift"; // デフォルトのダッシュキー
+            this.isDashActive = false;
+            this.rightAltPressed = false;
+            
+            // イベントリスナーを保存
+            this._keyDownHandler = this._onKeyDown.bind(this);
+            this._keyUpHandler = this._onKeyUp.bind(this);
+            this._renderHandler = this._onRender.bind(this);
+        }
+        
+        _onKeyDown(e) {
+            if (e.code === "AltRight") {
+                e.preventDefault();
+                if (!this.rightAltPressed) {
+                    this.rightAltPressed = true;
+                    this.toggle();
+                    this.toggleSettings();
+                }
+                return;
+            }
+            
+            if (e.code === this.dashKey && this.isEnabled) {
+                this.isDashActive = true;
+                this.applyDash();
+            }
+        }
+        
+        _onKeyUp(e) {
+            if (e.code === "AltRight") {
+                this.rightAltPressed = false;
+                return;
+            }
+            
+            if (e.code === this.dashKey && this.isEnabled) {
+                this.isDashActive = false;
+                this.removeDash();
+            }
+        }
+        
+        _onRender() {
+            // 設定画面の表示インジケーター
+            if (this.options["Show Settings"] && this.isEnabled) {
+                if (!this.indicator) {
+                    this.indicator = document.createElement("div");
+                    this.indicator.style.cssText = `
+                        position: fixed;
+                        top: 10px;
+                        right: 10px;
+                        background: rgba(0, 0, 0, 0.7);
+                        color: white;
+                        padding: 5px 10px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        z-index: 9999;
+                    `;
+                    document.body.appendChild(this.indicator);
+                }
+                
+                this.indicator.textContent = `Dash: ${this.isEnabled ? "ON" : "OFF"} | Key: ${this.dashKey} | Right Alt: Toggle`;
+            } else if (this.indicator) {
+                this.indicator.remove();
+                this.indicator = null;
+            }
+        }
+        
+        applyDash() {
+            const player = gameWorld.player;
+            if (!player || !player.inputs) return;
+            
+            player.inputs.sprint = true;
+            player.inputs.shift = true; 
+            
+            if (this.options["KeepSprint"]) {
+                if (player.hurtTime !== undefined) player.hurtTime = 0;
+                if (player.sprintTimeout !== undefined) player.sprintTimeout = 0;
+                if (player.noSprintTime !== undefined) player.noSprintTime = 0;
+                player.isSprinting = true;
+            }
+            
+            if (this.options["OmniSprint"]) {
+                if (player.inputs.backward && !player.inputs.forward) player.inputs.forward = true;
+                if (player.velocity) player.velocity.isSprinting = true;
+            }
+        }
+        
+        removeDash() {
+            const player = gameWorld.player;
+            if (!player) return;
+            
+            if (player.inputs) {
+                player.inputs.sprint = false;
+                player.inputs.shift = false;
+            }
+            player.isSprinting = false;
+            
+            if (player.velocity) player.velocity.isSprinting = false;
+        }
+        
+        createSettingsUI() {
+            if (this.settingsUI) return;
+            
+            this.settingsUI = document.createElement("div");
+            this.settingsUI.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 300px;
+                background: rgba(20, 20, 20, 0.95);
+                color: white;
+                border-radius: 8px;
+                padding: 15px;
+                z-index: 10000;
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+                font-family: Arial, sans-serif;
+                display: none;
+            `;
+            
+            this.settingsUI.innerHTML = `
+                <h3 style="margin-top: 0; text-align: center;">Custom Dash Settings</h3>
+                <div style="margin-bottom: 10px;">
+                    <label for="dash-key">Dash Key:</label>
+                    <select id="dash-key" style="width: 100%; padding: 5px; margin-top: 5px;">
+                        <option value="Shift">Shift</option>
+                        <option value="Control">Ctrl</option>
+                        <option value="Alt">Alt</option>
+                        <option value="KeyX">X</option>
+                        <option value="KeyC">C</option>
+                        <option value="KeyV">V</option>
+                        <option value="KeyB">B</option>
+                        <option value="KeyN">N</option>
+                        <option value="KeyM">M</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label>
+                        <input type="checkbox" id="keep-sprint" \${this.options["KeepSprint"] ? "checked" : ""}>
+                        Keep Sprint
+                    </label>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label>
+                        <input type="checkbox" id="omni-sprint" \${this.options["OmniSprint"] ? "checked" : ""}>
+                        Omni Sprint
+                    </label>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label>
+                        <input type="checkbox" id="show-settings" \${this.options["Show Settings"] ? "checked" : ""}>
+                        Show Settings Indicator
+                    </label>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button id="save-settings" style="padding: 5px 15px; margin-right: 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Save</button>
+                    <button id="close-settings" style="padding: 5px 15px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+                </div>
+                <div style="text-align: center; margin-top: 10px; font-size: 12px; opacity: 0.7;">
+                    Press Right Alt to toggle dash and open/close this menu
+                </div>
+            `;
+            
+            document.body.appendChild(this.settingsUI);
+            
+            // イベントリスナーを設定
+            document.getElementById("save-settings").addEventListener("click", () => {
+                this.saveSettings();
+            });
+            
+            document.getElementById("close-settings").addEventListener("click", () => {
+                this.toggleSettings();
+            });
+            
+            // ダッシュキーの選択イベント
+            document.getElementById("dash-key").addEventListener("change", (e) => {
+                this.dashKey = e.target.value;
+            });
+        }
+        
+        saveSettings() {
+            this.options["Dash Key"] = this.dashKey;
+            this.options["KeepSprint"] = document.getElementById("keep-sprint").checked;
+            this.options["OmniSprint"] = document.getElementById("omni-sprint").checked;
+            this.options["Show Settings"] = document.getElementById("show-settings").checked;
+            
+            // 設定保存のフィードバック
+            const saveButton = document.getElementById("save-settings");
+            const originalText = saveButton.textContent;
+            saveButton.textContent = "Saved!";
+            saveButton.style.background = "#2196F3";
+            
+            setTimeout(() => {
+                saveButton.textContent = originalText;
+                saveButton.style.background = "#4CAF50";
+            }, 1000);
+        }
+        
+        toggle
