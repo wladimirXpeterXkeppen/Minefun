@@ -1,0 +1,162 @@
+(function () {
+  let currentKeyCode = 'KeyJ'; // デフォルト
+  let currentKeyLabel = 'J';
+  let listening = false;
+
+  // ==== UI作成 ====
+  const panel = document.createElement('div');
+  panel.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #222;
+    color: #fff;
+    font-family: sans-serif;
+    padding: 20px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    z-index: 999999;
+    display: none;
+    min-width: 260px;
+    text-align: center;
+  `;
+  panel.innerHTML = `
+    <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">
+      Shift代替キー設定
+    </div>
+    <div style="font-size:13px; color:#aaa; margin-bottom:14px;">
+      現在のキー: <span id="current-key-display" style="color:#4caf50; font-weight:bold;">${currentKeyLabel}</span>
+    </div>
+    <button id="listen-btn" style="
+      padding: 8px 16px;
+      background: #2e7d32;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    ">新しいキーを押して設定</button>
+    <div style="font-size:11px; color:#888; margin-top:12px;">
+      右Altでこのパネルを閉じる
+    </div>
+  `;
+  document.body.appendChild(panel);
+
+  const displayEl = panel.querySelector('#current-key-display');
+  const listenBtn = panel.querySelector('#listen-btn');
+
+  // ==== 状態インジケーター(常時表示) ====
+  const indicator = document.createElement('div');
+  indicator.style.cssText = `
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    padding: 6px 12px;
+    font-family: monospace;
+    font-size: 13px;
+    border-radius: 4px;
+    z-index: 99999;
+    color: #fff;
+    background: #444;
+    pointer-events: none;
+  `;
+  document.body.appendChild(indicator);
+
+  function updateIndicator() {
+    indicator.textContent = `Shift代替: ${currentKeyLabel}`;
+  }
+  updateIndicator();
+
+  // ==== code -> 表示名の変換 ====
+  function codeToLabel(code) {
+    if (code.startsWith('Key')) return code.replace('Key', '');
+    if (code.startsWith('Digit')) return code.replace('Digit', '');
+    if (/^F([1-9]|1[0-2])$/.test(code)) return code;
+    const map = {
+      Semicolon: ';', Quote: "'", Comma: ',', Period: '.',
+      Slash: '/', BracketLeft: '[', BracketRight: ']',
+      Minus: '-', Equal: '=', Backquote: '`', Backslash: '\\',
+      Space: 'Space', CapsLock: 'CapsLock'
+    };
+    return map[code] || code;
+  }
+
+  // ==== 新しいキーの捕捉 ====
+  function startListening() {
+    listening = true;
+    listenBtn.textContent = 'キーを押してください...';
+    listenBtn.style.background = '#c62828';
+  }
+
+  function captureKey(e) {
+    if (!listening) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    // AltRight自体は代替キーに設定させない(パネル開閉と衝突するため)
+    if (e.code === 'AltRight') return;
+
+    currentKeyCode = e.code;
+    currentKeyLabel = codeToLabel(e.code);
+    displayEl.textContent = currentKeyLabel;
+    updateIndicator();
+
+    listening = false;
+    listenBtn.textContent = '新しいキーを押して設定';
+    listenBtn.style.background = '#2e7d32';
+  }
+
+  listenBtn.addEventListener('click', startListening);
+
+  // ==== Shift偽装イベントの発火 ====
+  function fireShift(type, isDown) {
+    const shiftEvent = new KeyboardEvent(type, {
+      key: 'Shift',
+      code: 'ShiftLeft',
+      keyCode: 16,
+      which: 16,
+      shiftKey: isDown,
+      bubbles: true,
+      cancelable: true
+    });
+    document.dispatchEvent(shiftEvent);
+    window.dispatchEvent(shiftEvent);
+  }
+
+  // ==== メインのキー監視 ====
+  window.addEventListener('keydown', (e) => {
+    // パネル開閉(右Alt)
+    if (e.code === 'AltRight') {
+      e.preventDefault();
+      const isOpen = panel.style.display === 'block';
+      panel.style.display = isOpen ? 'none' : 'block';
+      if (isOpen) {
+        // 閉じるときにキー待受中なら解除
+        listening = false;
+        listenBtn.textContent = '新しいキーを押して設定';
+        listenBtn.style.background = '#2e7d32';
+      }
+      return;
+    }
+
+    // キー設定待受中はここで捕捉して代替キー登録処理へ
+    if (listening) {
+      captureKey(e);
+      return;
+    }
+
+    // 代替キーが押されたらShiftを偽装
+    if (e.code === currentKeyCode) {
+      fireShift('keydown', true);
+    }
+  }, true);
+
+  window.addEventListener('keyup', (e) => {
+    if (!listening && e.code === currentKeyCode) {
+      fireShift('keyup', false);
+    }
+  }, true);
+
+  console.log('Shift代替キー設定ツールを起動しました。右Altでパネルを開閉できます。');
+})();
