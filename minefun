@@ -1,0 +1,341 @@
+(function() {
+    'use strict';
+    console.log('%c[Minehack] Script loaded - Auto activation enabled', 'color: #ff00ff; font-size: 14px; font-weight: bold;');
+    // ==================== MINEHACK LOGO ====================
+    function createMinehackLogo() {
+        if (document.getElementById('minehack-logo')) return;
+        const logo = document.createElement('div');
+        logo.id = 'minehack-logo';
+        logo.textContent = 'MINEHACK';
+        Object.assign(logo.style, {
+            position: 'fixed',
+            top: '14px',
+            left: '14px',
+            zIndex: '2147483647',
+            padding: '7px 13px',
+            borderRadius: '10px',
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '18px',
+            fontWeight: '900',
+            letterSpacing: '2px',
+            color: '#ffffff',
+            background: 'linear-gradient(135deg, #111827, #7c3aed, #ec4899)',
+            border: '1px solid rgba(255,255,255,0.35)',
+            boxShadow: '0 4px 18px rgba(124,58,237,0.55)',
+            textShadow: '0 1px 5px rgba(0,0,0,0.8)',
+            userSelect: 'none',
+            pointerEvents: 'none'
+        });
+        document.body.appendChild(logo);
+    }
+    function startMinehackLogo() {
+        if (document.body) createMinehackLogo();
+        else setTimeout(startMinehackLogo, 100);
+    }
+    startMinehackLogo();
+    function updateStatus(status, color = '#00ff00') {
+        console.log(`%c[MineGun Status] ${status}`, `color: ${color}; font-family: monospace;`);
+    }
+    // Dummy functions (no UI)
+    function updateHitAllIndicator() {}
+    function updateInfectionWinIndicator() {}
+    function showInfectionDebug() {}
+    function clearInfectionDebug() {}
+    function hideInfectionDebug() {}
+    let windowHooked = null;
+    let cheatInterval = null;
+    let hitAllActive = false;
+    let hitAllInterval = null;
+    const packetsOut = {
+        TIME_STEP_INFO: 1, TIME_STEP: 2, DEATH: 3, REQUEST_RESPAWN: 4, PLAY_EMOTION: 5, PING: 7,
+        PLACE_BLOCKS: 8, CHAT: 9, GET_PLAYERS: 10, CONVERT_MINEBUCKS: 11, FREE_AD: 12, HIT: 13,
+        PASTE_CHUNK_BLOCKS: 22, FILL_AREA_WITH_BLOCKS: 23, PICKUP_DROP_ITEM: 24, SKIN_CHANGED: 25,
+        USE_FOOD: 26, GOT_DAMAGE: 27, THROW_DYNAMITE: 28, THROW_PROJECTILE: 29, UPDATE_SIGN_TEXT: 30,
+        SIGN_INPUT_REQUEST: 31, MODIFIERS_AMOUNT_TO_REQUEST: 500, GET_CHUNKS_MODIFIERS: 501,
+        GET_ITEM_WITH_CREATE: 502, SHOOTER_CHANGE_WEAPON: 516, OPEN_LOOTBOX: 517, TRY_TO_USE_TNT: 520,
+        USE_HAND_ITEM: 521, SET_CURRENT_ACTIVE_SLOT: 504, REPLACE_ITEMS_IN_BLOCK: 505,
+        REPLACE_ITEMS: 506, MOVE_ITEMS_IN_BLOCK: 507, MOVE_ITEMS: 508, THROW_OUT_ITEM: 509,
+        GET_BLOCK_VIA_WHEEL: 510, CHANGE_BLOCK_OPEN_STATE: 511, EXIT_FROM_STORAGE_BLOCK: 518,
+        INST_DRAG_ITEM_TO_ARMOR: 519, OPEN_ITEM: 220, CRAFT: 221, START_TICKER: 222,
+        ADD_PLAYER_TO_PRIVATE: 512, REMOVE_PLAYER_FROM_PRIVATE: 513, GET_PLAYER_PRIVATE_MEMBERS: 514,
+        CREATE_PREFAB: 1101, DELETE_PREFAB: 1102, GET_PREFAB: 1103, GET_PREFABS: 1104,
+        INSERT_PREFAB: 1105, ERASE_AREA: 1106, PUBLISH_PREFAB: 1107, HNS_ATTACK_BLOCK: 1200,
+        HNS_PLAYER_LEFT_HIDED_STATE: 1201, CHOOSED_BLOCK: 1202, HNS_CHANGE_DOOR_STATE: 1203,
+        HNS_GET_FREE_KIT: 1204, INFECTION_GET_WEAPON: 1300, INFECTION_SELECT_ZOMBIE: 1301,
+        WAR_GET_WEAPON: 1400, SKY_WARS_SET_KIT: 1500, SKY_WARS_GET_FREE_KIT: 1501,
+        ONE_BLOCK_PORTAL_REQUEST: 1550, ONE_BLOCK_GO_HOME: 1551
+    };
+    const _assign = Object.assign;
+    const _defineProperty = Object.defineProperty;
+    // ==================== AGGRESSIVE GAME OBJECT SCAN ====================
+    function aggressiveScan() {
+        if (windowHooked) return true;
+        console.log('%c[Minehack] Running aggressive scan...', 'color: #ffff00;');
+        // Deep window scan
+        for (let key in window) {
+            try {
+                const obj = window[key];
+                if (obj && typeof obj === 'object' && obj.player && obj.gameWorld) {
+                    windowHooked = obj;
+                    console.log('%c[Minehack] ✅ Game object found via window scan!', 'color: #00ff00; font-weight: bold;');
+                    return true;
+                }
+            } catch (e) {}
+        }
+        // Canvas scan
+        const canvases = document.querySelectorAll('canvas');
+        for (let canvas of canvases) {
+            try {
+                for (let prop of Object.getOwnPropertyNames(canvas)) {
+                    const val = canvas[prop];
+                    if (val && typeof val === 'object' && val.player && val.gameWorld) {
+                        windowHooked = val;
+                        console.log('%c[MineGun] ✅ Game object found via canvas!', 'color: #00ff00; font-weight: bold;');
+                        return true;
+                    }
+                }
+            } catch (e) {}
+        }
+        return false;
+    }
+    // ==================== CHEATS CORE ====================
+    function cheatingIsFun() {
+        if (cheatInterval) {
+            clearInterval(cheatInterval);
+            cheatInterval = null;
+            updateStatus('Cheats OFF', '#ff0000');
+            return;
+        }
+        updateStatus('ACTIVE! 🔥', '#00ff00');
+        console.log('%c[Minehack] Cheats enabled - Rapid fire + ESP + more', 'color: #00ff00; font-weight: bold;');
+        cheatInterval = setInterval(() => {
+            if (!windowHooked?.gameWorld) return;
+            // ESP
+            try {
+                windowHooked.gameWorld.server.players.forEach((plr) => {
+                    if (plr.playerMaterial) plr.playerMaterial.depthTest = false;
+                    if (plr.isHided && plr.model) plr.model.visible = true;
+                });
+            } catch (e) {}
+            // No Fog
+            try {
+                const fog = windowHooked.gameWorld.threeScene?.scene?.fog;
+                if (fog) _assign(fog, { near: 9999, far: 10000 });
+            } catch (e) {}
+            // Weapon mods (FAST SHOOTING)
+            try {
+                const weaponMod = {
+                    isAuto: true,
+                    firerateMs: 15,
+                    lastShootFirerateMs: 15,
+                    timeToScopeSec: 0.01,
+                    reloadTimeMs: 1,
+                    currAmmo: 30,
+                    distance: 9999,
+                    recoilDecayRatio: 999,
+                    recoilMax: 0.000001,
+                    maxCrouchSpread: 0.000001,
+                    maxStandSpread: 0.000001,
+                    maxJumpInaccuracy: 0.000001,
+                    maxMoveInaccuracy: 0.000001,
+                    knifeLongAttackDelayMs: 10,
+                    knifeLongAttackFirerateMs: 15,
+                    recoilAttackX: 0.0001,
+                    recoilAttackY: 0.0001,
+                    secondAttackDistance: 9999,
+                    swapTimeMs: 1
+                };
+                windowHooked.gameWorld.systemsManager.activeSystems.forEach((system) => {
+                    if (system?.far) system.far = 9999;
+                    if (system?.playerShooter?.currPlayerWeapon) {
+                        _assign(system.playerShooter.currPlayerWeapon, weaponMod);
+                    }
+                    if (system?.playerShooter?.currPlayerWeaponSpec) {
+                        _assign(system.playerShooter.currPlayerWeaponSpec, weaponMod);
+                    }
+                    if (system?.playerShooter) {
+                        _defineProperty(system, 'cooldownRemainderMs', { get() { return 10; }, set() {} });
+                        _defineProperty(system, 'shootPressedDelayer', { get() { return 1; }, set() {} });
+                    }
+                });
+            } catch (e) {}
+            // Hit amplification
+            try {
+                const msgs = windowHooked.gameWorld.server.msgsToSend;
+                if (msgs && typeof msgs.push === 'function' && !msgs._push) {
+                    msgs._push = msgs.push;
+                    msgs.push = function(...args) {
+                        if (args[0] === packetsOut.HIT) {
+                            for (let i = 0; i < 12; i++) msgs._push.apply(this, args);
+                            return;
+                        }
+                        return msgs._push.apply(this, args);
+                    };
+                }
+            } catch (e) {}
+            // Instant block breaking
+            try {
+                const system = windowHooked.gameWorld.systemsManager.activeSystems.find(x => x?.infinityBlocks !== undefined);
+                if (system) {
+                    _defineProperty(system, 'instantBlockBreaking', { get() { return true; }, set() {} });
+                }
+            } catch (e) {}
+        }, 100);
+    }
+    // ==================== KEYBINDS ====================
+    const pressedKeys = {
+        allowBackquote: true,
+        allowPeriod: true,
+        allowComma: true,
+        allowEqual: true
+    };
+    function unlockKey(code) {
+        pressedKeys[`allow${code}`] = true;
+    }
+    function allowBinds() {
+        return document?.pointerLockElement && document?.activeElement?.tagName !== 'INPUT';
+    }
+    function tp(x = 0, y = 0, z = 0, relative = true) {
+        try {
+            const pos = windowHooked.player.position;
+            if (relative) {
+                pos.x += x; pos.y += y; pos.z += z;
+            } else {
+                _assign(pos, { x, y, z });
+            }
+            windowHooked.player.physicsPosComp.copyPos(pos);
+        } catch (e) {}
+    }
+    function tpToSelectedBlock() {
+        try {
+            const outline = windowHooked.gameWorld.systemsManager.activeSystems.find(s => s.currBlockPos);
+            if (outline?.currBlockPos) {
+                const { x, y, z } = outline.currBlockPos;
+                tp(x, y + 1, z, false);
+            }
+        } catch (e) {}
+    }
+    function hitAll() {
+        try {
+            const myId = windowHooked?.player?.sessionId;
+            windowHooked.gameWorld.server.players.forEach(plr => {
+                if (plr.sessionId === myId || !plr.model?.position) return;
+                const { x, y, z } = plr.model.position;
+                windowHooked.gameWorld.server.sendData(packetsOut.HIT, [
+                    windowHooked.gameWorld.time.localServerTimeMs,
+                    x, y + 0.1, z,
+                    0.00000001, -0.9999999, 0.00000001,
+                    2, plr.sessionId
+                ]);
+            });
+        } catch (e) {}
+    }
+    function toggleHitAll() {
+        hitAllActive = !hitAllActive;
+        if (hitAllActive) {
+            hitAll();
+            hitAllInterval = setInterval(hitAll, 450);
+            console.log('%c[MineGun] Hit All ENABLED', 'color: #00ff00;');
+        } else {
+            if (hitAllInterval) clearInterval(hitAllInterval);
+            console.log('%c[MineGun] Hit All DISABLED', 'color: #ffff00;');
+        }
+    }
+    function removeFloor() {
+        try {
+            windowHooked.gameWorld.server.players.forEach(plr => {
+                if (!plr.isAlive || !plr.model?.position) return;
+                let { x, y, z } = plr.model.position;
+                x = Math.round(x); y = Math.round(y - 1); z = Math.round(z);
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dz = -1; dz <= 1; dz++) {
+                        windowHooked.gameWorld.server.sendData(packetsOut.PLACE_BLOCKS, [
+                            x + dx, y, z + dz, 1, `${x+dx},${y},${z+dz}`, 0
+                        ]);
+                    }
+                }
+            });
+        } catch (e) {}
+    }
+    function keybindsLoop() {
+        if (allowBinds() && windowHooked) {
+            if (pressedKeys['Backquote'] && pressedKeys.allowBackquote) {
+                pressedKeys.allowBackquote = false;
+                setTimeout(() => unlockKey('Backquote'), 400);
+                tpToSelectedBlock();
+            }
+            if (pressedKeys['Period'] && pressedKeys.allowPeriod) {
+                pressedKeys.allowPeriod = false;
+                setTimeout(() => unlockKey('Period'), 500);
+                toggleHitAll();
+            }
+            if (pressedKeys['Comma'] && pressedKeys.allowComma) {
+                pressedKeys.allowComma = false;
+                setTimeout(() => unlockKey('Comma'), 200);
+                removeFloor();
+            }
+            if ((pressedKeys['Equal'] || pressedKeys['NumpadAdd']) && pressedKeys.allowEqual) {
+                pressedKeys.allowEqual = false;
+                setTimeout(() => unlockKey('Equal'), 1000);
+                cheatingIsFun();
+            }
+        }
+        requestAnimationFrame(keybindsLoop);
+    }
+    // ==================== AUTO ACTIVATION POLLING ====================
+    function startAutoActivation() {
+        console.log('%c[MineGun] Starting auto-activation polling...', 'color: #ffff00;');
+        const pollInterval = setInterval(() => {
+            if (windowHooked) {
+                clearInterval(pollInterval);
+                console.log('%c[MineGun] Game context ready - Activating cheats!', 'color: #00ff00; font-weight: bold;');
+                cheatingIsFun();
+                keybindsLoop();
+                return;
+            }
+            // Try to find game object
+            aggressiveScan();
+        }, 500);
+        // Safety net
+        setTimeout(() => {
+            if (!windowHooked) {
+                console.log('%c[MineGun] Safety activation triggered', 'color: #ffff00;');
+                aggressiveScan();
+                if (windowHooked) {
+                    cheatingIsFun();
+                    keybindsLoop();
+                }
+            }
+        }, 12000);
+    }
+    // Hook Function.prototype.call for early detection
+    const originalCall = Function.prototype.call;
+    Function.prototype.call = function(thisArg, ...args) {
+        if (thisArg && typeof thisArg === 'object' && thisArg.player && thisArg.gameWorld && !windowHooked) {
+            windowHooked = thisArg;
+            console.log('%c[MineGun] Game object hooked via Function.call!', 'color: #00ff00; font-weight: bold;');
+        }
+        return originalCall.apply(this, [thisArg, ...args]);
+    };
+    // Hook defineProperty
+    const originalDefineProperty = Object.defineProperty;
+    Object.defineProperty = function(obj, prop, descriptor) {
+        const ret = originalDefineProperty.apply(this, arguments);
+        if (prop === 'player' || prop === 'gameWorld') {
+            try {
+                if (obj && obj.player && obj.gameWorld) {
+                    windowHooked = obj;
+                }
+            } catch (e) {}
+        }
+        return ret;
+    };
+    // Start everything
+    window.addEventListener('keydown', (e) => { pressedKeys[e.code] = true; });
+    window.addEventListener('keyup', (e) => { pressedKeys[e.code] = false; });
+    // Begin auto activation
+    setTimeout(() => {
+        startAutoActivation();
+    }, 1500);
+    console.log('%c[MineGun] Fully initialized - Waiting for game...', 'color: #00ff00;');
+})();
