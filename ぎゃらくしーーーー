@@ -1,8 +1,8 @@
 (function() {
 'use strict';
-
+ 
 const STORAGE_KEY = "mf-modmenu-settings-v3";
-
+ 
 const defaultData = {
     mods:{
         crosshair:false,
@@ -47,7 +47,7 @@ const defaultData = {
     hpHitColor:{ color:"#ff0000" },
     keybinds:{ menu:"AltLeft" }
 };
-
+ 
 let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || {};
 data.mods        = {...defaultData.mods,        ...(data.mods        || {})};
 data.crosshair   = {...defaultData.crosshair,   ...(data.crosshair   || {})};
@@ -57,16 +57,16 @@ data.chat        = {...defaultData.chat,        ...(data.chat        || {})};
 data.thewar      = {...defaultData.thewar,      ...(data.thewar      || {})};
 data.hpHitColor  = {...defaultData.hpHitColor,  ...(data.hpHitColor  || {})};
 data.keybinds    = {...defaultData.keybinds,    ...(data.keybinds    || {})};
-
+ 
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    GLOBAL STYLE
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 const globalStyle = document.createElement("style");
 globalStyle.textContent = `
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@400;500;600&display=swap');
-
+ 
 :root {
     --cel-bg:       rgba(4, 8, 20, 0.97);
     --cel-panel:    rgba(8, 16, 36, 0.95);
@@ -82,8 +82,8 @@ globalStyle.textContent = `
     --cel-font:     'Rajdhani', sans-serif;
     --cel-body:     'Exo 2', sans-serif;
 }
-
-/* â”€â”€ MENU WRAPPER â”€â”€ */
+ 
+/* ── MENU WRAPPER ── */
 .mf-modmenu {
     position: fixed;
     top: 50%;
@@ -94,8 +94,8 @@ globalStyle.textContent = `
     display: none;
     user-select: none;
 }
-
-/* â”€â”€ STAR CANVAS BACKGROUND â”€â”€ */
+ 
+/* ── STAR CANVAS BACKGROUND ── */
 .mf-stars-canvas {
     position: absolute;
     top: 0; left: 0;
@@ -105,8 +105,8 @@ globalStyle.textContent = `
     overflow: hidden;
     z-index: 0;
 }
-
-/* â”€â”€ MAIN PANEL â”€â”€ */
+ 
+/* ── MAIN PANEL ── */
 .mf-menu {
     background: var(--cel-bg);
     backdrop-filter: blur(24px);
@@ -127,8 +127,8 @@ globalStyle.textContent = `
     overflow: hidden;
     position: relative;
 }
-
-/* â”€â”€ NEON BORDER ANIMATION â”€â”€ */
+ 
+/* ── NEON BORDER ANIMATION ── */
 .mf-menu::before {
     content: '';
     position: absolute;
@@ -144,8 +144,8 @@ globalStyle.textContent = `
     0%   { background-position: 0% 50%; }
     100% { background-position: 300% 50%; }
 }
-
-/* â”€â”€ TITLE BAR â”€â”€ */
+ 
+/* ── TITLE BAR ── */
 .mf-title-bar {
     background: linear-gradient(135deg, rgba(0,207,255,0.08), rgba(123,47,255,0.08), rgba(255,0,255,0.05));
     border-bottom: 1px solid rgba(0,207,255,0.2);
@@ -156,7 +156,7 @@ globalStyle.textContent = `
     position: relative;
     z-index: 1;
 }
-
+ 
 .mf-title-icon {
     width: 2.8vh;
     height: 2.8vh;
@@ -174,7 +174,7 @@ globalStyle.textContent = `
     0%,100% { box-shadow: 0 0 14px rgba(0,207,255,0.6), 0 0 28px rgba(123,47,255,0.3); }
     50%      { box-shadow: 0 0 20px rgba(0,207,255,0.9), 0 0 40px rgba(123,47,255,0.5); }
 }
-
+ 
 .mf-title {
     font-size: 2vh;
     font-weight: 700;
@@ -191,7 +191,7 @@ globalStyle.textContent = `
     0%   { background-position: 0% 50%; }
     100% { background-position: 200% 50%; }
 }
-
+ 
 .mf-version {
     margin-left: auto;
     font-size: 1vh;
@@ -199,8 +199,8 @@ globalStyle.textContent = `
     letter-spacing: 0.1em;
     opacity: 0.8;
 }
-
-/* â”€â”€ SECTION HEADERS â”€â”€ */
+ 
+/* ── SECTION HEADERS ── */
 .mf-section-header {
     font-size: 1vh;
     font-weight: 700;
@@ -210,8 +210,8 @@ globalStyle.textContent = `
     padding: 0.6vh 1.2vh 0.2vh;
     opacity: 0.7;
 }
-
-/* â”€â”€ MOD LIST â”€â”€ */
+ 
+/* ── MOD LIST ── */
 .mf-mod-list {
     display: flex;
     flex-direction: column;
@@ -225,8 +225,8 @@ globalStyle.textContent = `
 .mf-mod-list::-webkit-scrollbar { width: 3px; }
 .mf-mod-list::-webkit-scrollbar-track { background: transparent; }
 .mf-mod-list::-webkit-scrollbar-thumb { background: rgba(0,207,255,0.3); border-radius: 99px; }
-
-/* â”€â”€ MOD ROW â”€â”€ */
+ 
+/* ── MOD ROW ── */
 .mf-mod {
     display: flex;
     justify-content: space-between;
@@ -257,8 +257,8 @@ globalStyle.textContent = `
     width: 2vh;
     text-align: center;
 }
-
-/* â”€â”€ TOGGLE CHECKBOX â”€â”€ */
+ 
+/* ── TOGGLE CHECKBOX ── */
 input[type="checkbox"] {
     appearance: none;
     width: 3.4vh;
@@ -292,8 +292,8 @@ input[type="checkbox"]:checked {
 input[type="checkbox"]:checked::after {
     left: calc(100% - 1.65vh);
 }
-
-/* â”€â”€ SETTINGS GEAR BUTTON â”€â”€ */
+ 
+/* ── SETTINGS GEAR BUTTON ── */
 .mod-settings {
     appearance: none;
     width: 2.6vh;
@@ -323,15 +323,15 @@ input[type="checkbox"]:checked::after {
     cursor: default;
 }
 .mod-settings:disabled:hover { transform: none; }
-
-/* â”€â”€ DIVIDER â”€â”€ */
+ 
+/* ── DIVIDER ── */
 .mf-divider {
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(0,207,255,0.2), rgba(255,0,255,0.1), transparent);
     margin: 0.3vh 0;
 }
-
-/* â”€â”€ KEYBIND ROW â”€â”€ */
+ 
+/* ── KEYBIND ROW ── */
 .mf-keybind-row {
     display: flex;
     justify-content: space-between;
@@ -365,8 +365,8 @@ input[type="checkbox"]:checked::after {
     letter-spacing: 0.1em;
     text-shadow: 0 0 8px rgba(0,207,255,0.5);
 }
-
-/* â”€â”€ SETTINGS PAGE â”€â”€ */
+ 
+/* ── SETTINGS PAGE ── */
 .mf-settings-page {
     display: none;
     flex-direction: column;
@@ -379,7 +379,7 @@ input[type="checkbox"]:checked::after {
 }
 .mf-settings-page::-webkit-scrollbar { width: 3px; }
 .mf-settings-page::-webkit-scrollbar-thumb { background: rgba(0,207,255,0.3); border-radius: 99px; }
-
+ 
 .mf-settings-title {
     font-size: 1.4vh;
     font-weight: 700;
@@ -406,8 +406,8 @@ input[type="checkbox"]:checked::after {
     font-size: 1.25vh;
     font-weight: 500;
 }
-
-/* â”€â”€ BACK BUTTON â”€â”€ */
+ 
+/* ── BACK BUTTON ── */
 .mf-back {
     background: rgba(0,207,255,0.07);
     border: 1px solid rgba(0,207,255,0.2);
@@ -432,8 +432,8 @@ input[type="checkbox"]:checked::after {
     color: var(--cel-accent);
     box-shadow: 0 0 12px rgba(0,207,255,0.2);
 }
-
-/* â”€â”€ SELECT â”€â”€ */
+ 
+/* ── SELECT ── */
 select {
     background: rgba(4,8,20,0.9);
     border: 1px solid rgba(0,207,255,0.2);
@@ -454,8 +454,8 @@ option {
     background-color: #040814;
     color: #c8e8ff;
 }
-
-/* â”€â”€ TEXT INPUT â”€â”€ */
+ 
+/* ── TEXT INPUT ── */
 .mf-modmenu input[type="text"],
 .mf-modmenu input[type="color"] {
     width: 8vh;
@@ -475,8 +475,8 @@ option {
     border-color: var(--cel-accent);
     box-shadow: 0 0 8px rgba(0,207,255,0.25);
 }
-
-/* â”€â”€ RANGE SLIDER â”€â”€ */
+ 
+/* ── RANGE SLIDER ── */
 input[type="range"] {
     width: 11vh;
     height: 0.5vh;
@@ -494,8 +494,8 @@ input[type="range"]::-webkit-slider-thumb {
     cursor: pointer;
     box-shadow: 0 0 8px rgba(0,207,255,0.6);
 }
-
-/* â”€â”€ TAGS â”€â”€ */
+ 
+/* ── TAGS ── */
 .beta-tag {
     background: linear-gradient(135deg, var(--cel-danger), #ff8c00);
     color: white;
@@ -514,8 +514,8 @@ input[type="range"]::-webkit-slider-thumb {
     border-radius: 4px;
     letter-spacing: 0.05em;
 }
-
-/* â”€â”€ CROSSHAIR PREVIEW â”€â”€ */
+ 
+/* ── CROSSHAIR PREVIEW ── */
 #mf-crosshair-preview-box {
     width: 10vh;
     height: 10vh;
@@ -528,8 +528,8 @@ input[type="range"]::-webkit-slider-thumb {
     position: relative;
 }
 #mf-crosshair-preview { position: absolute; }
-
-/* â”€â”€ RESET BTN â”€â”€ */
+ 
+/* ── RESET BTN ── */
 #mf-reset-textures {
     background: linear-gradient(135deg, rgba(255,60,90,0.2), rgba(255,60,90,0.1));
     border: 1px solid rgba(255,60,90,0.4);
@@ -545,8 +545,8 @@ input[type="range"]::-webkit-slider-thumb {
     background: rgba(255,60,90,0.3);
     box-shadow: 0 0 12px rgba(255,60,90,0.4);
 }
-
-/* â”€â”€ TEXTURE UPLOAD â”€â”€ */
+ 
+/* ── TEXTURE UPLOAD ── */
 #mf-texture-upload {
     position: relative;
     width: 100%;
@@ -572,10 +572,10 @@ input[type="range"]::-webkit-slider-thumb {
     background: rgba(0,207,255,0.15);
     border-color: var(--cel-accent);
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ══════════════════════════════════
    FPS / CPS COUNTER
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════ */
 .minefun-fps, .minefun-cps {
     background: rgba(4,8,20,0.9);
     border: 1px solid rgba(0,207,255,0.25);
@@ -606,10 +606,10 @@ input[type="range"]::-webkit-slider-thumb {
     font-variant-numeric: tabular-nums;
     font-weight: 600;
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ══════════════════════════════════
    KEYSTROKES
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════ */
 .mf-keystrokes {
     position: fixed;
     bottom: 2vh;
@@ -667,7 +667,7 @@ input[type="range"]::-webkit-slider-thumb {
     margin-top: 0.2vh;
     font-weight: 700;
 }
-
+ 
 /* Celestar theme */
 .mf-keystrokes[mf-theme="celestar"] .key {
     background: linear-gradient(135deg, rgba(0,207,255,0.12), rgba(123,47,255,0.12));
@@ -710,7 +710,7 @@ input[type="range"]::-webkit-slider-thumb {
     background: rgba(0,0,0,0.9);
     border: 1px solid rgba(255,255,255,0.06);
 }
-/* Space theme â€” new */
+/* Space theme — new */
 .mf-keystrokes[mf-theme="space"] .key {
     background: linear-gradient(135deg, rgba(4,8,28,0.9), rgba(10,4,40,0.9));
     border: 1px solid rgba(0,207,255,0.4);
@@ -722,7 +722,7 @@ input[type="range"]::-webkit-slider-thumb {
     box-shadow: 0 0 20px rgba(0,207,255,0.6), 0 0 40px rgba(123,47,255,0.3) !important;
     color: #fff !important;
 }
-/* Cyberpunk theme â€” new */
+/* Cyberpunk theme — new */
 .mf-keystrokes[mf-theme="cyberpunk"] .key {
     background: rgba(10,0,20,0.92);
     border: 1px solid #ff00ff;
@@ -736,7 +736,7 @@ input[type="range"]::-webkit-slider-thumb {
     color: #fff !important;
     border-color: #fff !important;
 }
-/* Ember theme â€” new */
+/* Ember theme — new */
 .mf-keystrokes[mf-theme="ember"] .key {
     background: linear-gradient(135deg, rgba(30,8,0,0.9), rgba(20,5,0,0.9));
     border: 1px solid rgba(255,80,0,0.5);
@@ -749,7 +749,7 @@ input[type="range"]::-webkit-slider-thumb {
     color: #fff !important;
     border-color: #ff8800 !important;
 }
-/* Frost theme â€” new */
+/* Frost theme — new */
 .mf-keystrokes[mf-theme="frost"] .key {
     background: linear-gradient(135deg, rgba(200,240,255,0.1), rgba(150,210,255,0.06));
     border: 1px solid rgba(180,230,255,0.35);
@@ -763,7 +763,7 @@ input[type="range"]::-webkit-slider-thumb {
     color: #fff !important;
     border-color: #a0e0ff !important;
 }
-/* Military theme â€” new */
+/* Military theme — new */
 .mf-keystrokes[mf-theme="military"] .key {
     background: rgba(10,20,8,0.9);
     border: 1px solid rgba(60,120,40,0.5);
@@ -777,10 +777,10 @@ input[type="range"]::-webkit-slider-thumb {
     color: #ccff88 !important;
     border-color: #88cc66 !important;
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ══════════════════════════════════
    HOME TIP
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════ */
 #mf-home-tip {
     position: fixed;
     bottom: 2vh;
@@ -800,10 +800,10 @@ input[type="range"]::-webkit-slider-thumb {
     backdrop-filter: blur(12px);
 }
 #mf-home-tip span { color: var(--cel-accent); text-shadow: 0 0 8px rgba(0,207,255,0.5); }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ══════════════════════════════════
    SPACE CHESTS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════ */
 @keyframes starFloat {
     0%,100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; }
     50%      { transform: translateY(-3px) rotate(180deg); opacity: 1; }
@@ -820,7 +820,7 @@ input[type="range"]::-webkit-slider-thumb {
     0%,100% { text-shadow: 0 0 4px currentColor; }
     50%      { text-shadow: 0 0 12px currentColor, 0 0 24px currentColor; }
 }
-
+ 
 .mf-space-chest {
     position: relative;
     border-radius: 10px;
@@ -847,8 +847,8 @@ input[type="range"]::-webkit-slider-thumb {
     pointer-events: none;
     animation: runeGlow 3s ease-in-out infinite;
 }
-
-/* Wood tier â€” bronze/basic */
+ 
+/* Wood tier — bronze/basic */
 .mf-chest-wood {
     background: linear-gradient(135deg, #1a0c00 0%, #2d1500 50%, #1a0c00 100%) !important;
     border: 1px solid #8B4513 !important;
@@ -860,8 +860,8 @@ input[type="range"]::-webkit-slider-thumb {
     background: linear-gradient(135deg, #2d1500, #3d1e00) !important;
     border: 1px solid rgba(139,69,19,0.4) !important;
 }
-
-/* Iron tier â€” grey/silver */
+ 
+/* Iron tier — grey/silver */
 .mf-chest-iron {
     background: linear-gradient(135deg, #0a0f14 0%, #141e28 50%, #0a0f14 100%) !important;
     border: 1px solid #4a7090 !important;
@@ -873,8 +873,8 @@ input[type="range"]::-webkit-slider-thumb {
     background: linear-gradient(135deg, #0d1820, #121f2a) !important;
     border: 1px solid rgba(74,112,144,0.4) !important;
 }
-
-/* Gold tier â€” legendary gold */
+ 
+/* Gold tier — legendary gold */
 .mf-chest-gold {
     background: linear-gradient(135deg, #1a1000 0%, #2d1f00 40%, #1a1200 100%) !important;
     border: 2px solid #c8920a !important;
@@ -887,8 +887,8 @@ input[type="range"]::-webkit-slider-thumb {
     background: linear-gradient(135deg, #1f1500, #2a1e00) !important;
     border: 1px solid rgba(200,146,10,0.5) !important;
 }
-
-/* Diamond tier â€” legendary blue/cosmic */
+ 
+/* Diamond tier — legendary blue/cosmic */
 .mf-chest-diamond {
     background: linear-gradient(135deg, #000820 0%, #001040 30%, #000c30 70%, #000820 100%) !important;
     border: 2px solid #00bfff !important;
@@ -902,10 +902,10 @@ input[type="range"]::-webkit-slider-thumb {
     border: 1px solid rgba(0,191,255,0.4) !important;
     box-shadow: inset 0 0 6px rgba(0,191,255,0.1) !important;
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ══════════════════════════════════
    SPACE INVENTORY
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════ */
 @keyframes inventoryFloat {
     0%,100% { box-shadow: 0 0 20px rgba(0,207,255,0.2), 0 0 40px rgba(123,47,255,0.1); }
     50%      { box-shadow: 0 0 30px rgba(0,207,255,0.35), 0 0 60px rgba(123,47,255,0.2); }
@@ -918,7 +918,7 @@ input[type="range"]::-webkit-slider-thumb {
     0%,100% { opacity: 0.5; }
     50%      { opacity: 1; }
 }
-
+ 
 .mf-space-inventory {
     background: linear-gradient(135deg, rgba(0,4,20,0.97) 0%, rgba(0,8,30,0.97) 50%, rgba(4,0,24,0.97) 100%) !important;
     border: 1px solid rgba(0,207,255,0.3) !important;
@@ -974,100 +974,100 @@ input[type="range"]::-webkit-slider-thumb {
 }
 `;
 document.head.appendChild(globalStyle);
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    BUILD MENU HTML
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 const menu = document.createElement("div");
 menu.className = "mf-modmenu";
 menu.innerHTML = `
 <div class="mf-menu">
     <div class="mf-title-bar">
-        <div class="mf-title-icon">âœ¦</div>
+        <div class="mf-title-icon">✦</div>
         <div class="mf-title">Celestar</div>
         <div class="mf-version">v3.0</div>
     </div>
-
+ 
     <div class="mf-mod-list">
         <div class="mf-section-header">VISUAL</div>
-
+ 
         <div class="mf-mod" data-mod="crosshair">
-            <label><span class="mf-mod-icon">âŠ•</span><input type="checkbox" class="mod-toggle"> Custom Crosshair</label>
-            <button class="mod-settings">âš™</button>
+            <label><span class="mf-mod-icon">⊕</span><input type="checkbox" class="mod-toggle"> Custom Crosshair</label>
+            <button class="mod-settings">⚙</button>
         </div>
-
+ 
         <div class="mf-mod" data-mod="textures">
-            <label><span class="mf-mod-icon">ðŸŽ¨</span><input type="checkbox" class="mod-toggle"> Texture Pack <span class="beta-tag">BETA</span></label>
-            <button class="mod-settings">âš™</button>
+            <label><span class="mf-mod-icon">🎨</span><input type="checkbox" class="mod-toggle"> Texture Pack <span class="beta-tag">BETA</span></label>
+            <button class="mod-settings">⚙</button>
         </div>
-
+ 
         <div class="mf-mod" data-mod="keystrokes">
-            <label><span class="mf-mod-icon">âŒ¨</span><input type="checkbox" class="mod-toggle"> Keystrokes</label>
-            <button class="mod-settings">âš™</button>
+            <label><span class="mf-mod-icon">⌨</span><input type="checkbox" class="mod-toggle"> Keystrokes</label>
+            <button class="mod-settings">⚙</button>
         </div>
-
+ 
         <div class="mf-mod" data-mod="hpHitColor">
-            <label><span class="mf-mod-icon">ðŸ’¢</span><input type="checkbox" class="mod-toggle"> Damage Vignette</label>
-            <button class="mod-settings">âš™</button>
+            <label><span class="mf-mod-icon">💢</span><input type="checkbox" class="mod-toggle"> Damage Vignette</label>
+            <button class="mod-settings">⚙</button>
         </div>
-
+ 
         <div class="mf-divider"></div>
         <div class="mf-section-header">GAMEPLAY</div>
-
+ 
         <div class="mf-mod" data-mod="zoom">
-            <label><span class="mf-mod-icon">ðŸ”­</span><input type="checkbox" class="mod-toggle"> Zoom</label>
-            <button class="mod-settings">âš™</button>
+            <label><span class="mf-mod-icon">🔭</span><input type="checkbox" class="mod-toggle"> Zoom</label>
+            <button class="mod-settings">⚙</button>
         </div>
-
+ 
         <div class="mf-mod" data-mod="chat">
-            <label><span class="mf-mod-icon">ðŸ’¬</span><input type="checkbox" class="mod-toggle"> Chat</label>
-            <button class="mod-settings">âš™</button>
+            <label><span class="mf-mod-icon">💬</span><input type="checkbox" class="mod-toggle"> Chat</label>
+            <button class="mod-settings">⚙</button>
         </div>
-
+ 
         <div class="mf-mod" data-mod="thewar">
-            <label><span class="mf-mod-icon">âš”</span><input type="checkbox" class="mod-toggle"> The War Utils</label>
-            <button class="mod-settings">âš™</button>
+            <label><span class="mf-mod-icon">⚔</span><input type="checkbox" class="mod-toggle"> The War Utils</label>
+            <button class="mod-settings">⚙</button>
         </div>
-
+ 
         <div class="mf-mod" data-mod="betterChests">
-            <label><span class="mf-mod-icon">ðŸŒŒ</span><input type="checkbox" class="mod-toggle"> Space Chests <span class="new-tag">NEW</span></label>
-            <button class="mod-settings" disabled>âš™</button>
+            <label><span class="mf-mod-icon">🌌</span><input type="checkbox" class="mod-toggle"> Space Chests <span class="new-tag">NEW</span></label>
+            <button class="mod-settings" disabled>⚙</button>
         </div>
-
+ 
         <div class="mf-mod" data-mod="spaceInventory">
-            <label><span class="mf-mod-icon">ðŸš€</span><input type="checkbox" class="mod-toggle"> Space Inventory <span class="new-tag">NEW</span></label>
-            <button class="mod-settings" disabled>âš™</button>
+            <label><span class="mf-mod-icon">🚀</span><input type="checkbox" class="mod-toggle"> Space Inventory <span class="new-tag">NEW</span></label>
+            <button class="mod-settings" disabled>⚙</button>
         </div>
-
+ 
         <div class="mf-divider"></div>
         <div class="mf-section-header">HUD</div>
-
+ 
         <div class="mf-mod" data-mod="fps">
-            <label><span class="mf-mod-icon">ðŸ“Š</span><input type="checkbox" class="mod-toggle"> FPS Counter</label>
-            <button class="mod-settings" disabled>âš™</button>
+            <label><span class="mf-mod-icon">📊</span><input type="checkbox" class="mod-toggle"> FPS Counter</label>
+            <button class="mod-settings" disabled>⚙</button>
         </div>
-
+ 
         <div class="mf-mod" data-mod="cps">
-            <label><span class="mf-mod-icon">ðŸ–±</span><input type="checkbox" class="mod-toggle"> CPS Counter</label>
-            <button class="mod-settings" disabled>âš™</button>
+            <label><span class="mf-mod-icon">🖱</span><input type="checkbox" class="mod-toggle"> CPS Counter</label>
+            <button class="mod-settings" disabled>⚙</button>
         </div>
-
+ 
         <div class="mf-divider"></div>
-
+ 
         <div class="mf-keybind-row">
-            <button id="mf-change-key">âŒ¨ Menu Key</button>
+            <button id="mf-change-key">⌨ Menu Key</button>
             <span id="mf-key-display">ALT</span>
         </div>
     </div>
-
+ 
     <div class="mf-settings-page"></div>
 </div>
 `;
 document.body.appendChild(menu);
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    TOGGLE STATES
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 let open = false;
 document.addEventListener("keydown", e => {
     if(e.code === data.keybinds.menu){
@@ -1075,31 +1075,31 @@ document.addEventListener("keydown", e => {
         menu.style.display = open ? "block" : "none";
     }
 });
-
+ 
 document.querySelectorAll(".mf-mod").forEach(row => {
     const mod = row.dataset.mod;
     const toggle = row.querySelector(".mod-toggle");
     toggle.checked = data.mods[mod];
     toggle.onchange = () => { data.mods[mod] = toggle.checked; save(); };
 });
-
+ 
 const settingsPage = document.querySelector(".mf-settings-page");
 const modList      = document.querySelector(".mf-mod-list");
-
+ 
 document.querySelectorAll(".mod-settings").forEach(btn => {
     btn.onclick = () => {
         const mod = btn.parentElement.dataset.mod;
         openSettings(mod);
     };
 });
-
+ 
 function openSettings(mod){
     settingsPage.innerHTML = "";
     settingsPage.style.display = "flex";
     modList.style.display = "none";
-
+ 
     const back = document.createElement("button");
-    back.innerHTML = "â† Back";
+    back.innerHTML = "← Back";
     back.className = "mf-back";
     back.onclick = () => {
         settingsPage.style.display = "none";
@@ -1107,7 +1107,7 @@ function openSettings(mod){
         modList.style.display = "flex";
     };
     settingsPage.appendChild(back);
-
+ 
     if(mod === "crosshair")  buildCrosshairSettings();
     if(mod === "keystrokes") buildKeystrokesSettings();
     if(mod === "textures")   buildTextureSettings();
@@ -1116,37 +1116,37 @@ function openSettings(mod){
     if(mod === "hpHitColor") buildHpHitColorSettings();
     if(mod === "zoom")       buildZoomSettings();
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    KEYBIND
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 const keyBtn     = document.getElementById("mf-change-key");
 const keyDisplay = document.getElementById("mf-key-display");
-
+ 
 function formatKey(code){
     return code.replace("Key","").replace("Digit","").replace("Left","").replace("Right","");
 }
 keyDisplay.textContent = formatKey(data.keybinds.menu);
-
+ 
 let waitingKey = false;
-keyBtn.onclick = () => { keyBtn.textContent = "Press a keyâ€¦"; waitingKey = true; };
-
+keyBtn.onclick = () => { keyBtn.textContent = "Press a key…"; waitingKey = true; };
+ 
 document.addEventListener("keydown", e => {
     if(!waitingKey) return;
     e.preventDefault();
     data.keybinds.menu = e.code;
     save();
     keyDisplay.textContent = formatKey(e.code);
-    keyBtn.innerHTML = "âŒ¨ Menu Key";
+    keyBtn.innerHTML = "⌨ Menu Key";
     waitingKey = false;
     updateHomeModTip();
 });
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   CROSSHAIR â€” 30 PRESETS (originals + 10 new + 10 more new)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+ 
+/* ═══════════════════════════════════════════
+   CROSSHAIR — 30 PRESETS (originals + 10 new + 10 more new)
+═══════════════════════════════════════════ */
 const crosshairPresets = {
-    /* â”€â”€ originals â”€â”€ */
+    /* ── originals ── */
     "default":  { label:"Default",   style:{ backgroundColor:"#fff", border:"2px solid #111", borderRadius:"70.5px", width:1,  height:1  }},
     "plus1":    { label:"Plus 1",    image:"https://celestarminefun.github.io/crosshairs/plus1.png",    style:{ border:"none", borderRadius:"0", width:32, height:32 }},
     "plus2":    { label:"Plus 2",    image:"https://celestarminefun.github.io/crosshairs/plus2.png",    style:{ border:"none", borderRadius:"0", width:32, height:32 }},
@@ -1158,8 +1158,8 @@ const crosshairPresets = {
     "cross":    { label:"Cross",     image:"https://celestarminefun.github.io/crosshairs/cross.png",     style:{ border:"none", borderRadius:"0", width:32, height:32 }},
     "eye":      { label:"Eye",       image:"https://celestarminefun.github.io/crosshairs/eye.png",       style:{ border:"none", borderRadius:"0", width:32, height:32 }},
     "triangle": { label:"Triangle",  image:"https://celestarminefun.github.io/crosshairs/triangle.png",  style:{ border:"none", borderRadius:"0", width:32, height:32 }},
-
-    /* â”€â”€ batch 2 SVG crosshairs â”€â”€ */
+ 
+    /* ── batch 2 SVG crosshairs ── */
     "neo_dot":      { label:"Neo Dot",      svg: makeSVG_NeoDot()      },
     "sharp_cross":  { label:"Sharp Cross",  svg: makeSVG_SharpCross()  },
     "sniper":       { label:"Sniper",       svg: makeSVG_Sniper()      },
@@ -1170,8 +1170,8 @@ const crosshairPresets = {
     "hex":          { label:"Hex",          svg: makeSVG_Hex()         },
     "brackets":     { label:"Brackets",     svg: makeSVG_Brackets()    },
     "nano":         { label:"Nano",         svg: makeSVG_Nano()        },
-
-    /* â”€â”€ batch 3 â€” 10 brand new crosshairs â”€â”€ */
+ 
+    /* ── batch 3 — 10 brand new crosshairs ── */
     "pulse":        { label:"Pulse",        svg: makeSVG_Pulse()       },
     "wing":         { label:"Wing",         svg: makeSVG_Wing()        },
     "reactor":      { label:"Reactor",      svg: makeSVG_Reactor()     },
@@ -1183,14 +1183,14 @@ const crosshairPresets = {
     "halo":         { label:"Halo",         svg: makeSVG_Halo()        },
     "star_aim":     { label:"Star Aim",     svg: makeSVG_StarAim()     },
 };
-
+ 
 /* SVG crosshair builders */
 function svgWrap(inner, size=32){
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${inner}</svg>`
     )}`;
 }
-
+ 
 /* Batch 2 builders */
 function makeSVG_NeoDot(){
     return svgWrap(`
@@ -1270,8 +1270,8 @@ function makeSVG_Nano(){
         <line x1="18" y1="16" x2="20" y2="16" stroke="#00cfff" stroke-width="1.5" stroke-linecap="round"/>
     `);
 }
-
-/* Batch 3 â€” 10 new */
+ 
+/* Batch 3 — 10 new */
 function makeSVG_Pulse(){
     return svgWrap(`
         <circle cx="16" cy="16" r="12" stroke="#00cfff" stroke-width="0.8" fill="none" opacity="0.4"/>
@@ -1368,20 +1368,20 @@ function makeSVG_StarAim(){
         <circle cx="16" cy="16" r="1" fill="#fff"/>
     `);
 }
-
+ 
 /* Apply crosshair */
 function applyCrosshairTo(aim){
     if(!data.mods.crosshair) return;
     const settings = data.crosshair;
-
+ 
     aim.style.position = "absolute";
     aim.style.top      = "50%";
     aim.style.left     = "50%";
     aim.style.transform = "translate(-50%,-50%)";
     aim.style.zIndex   = "9999";
-
+ 
     const preset = crosshairPresets[settings.preset];
-
+ 
     if(settings.preset === "custom" && settings.customURL){
         aim.style.backgroundImage = `url('${settings.customURL}')`;
         aim.style.backgroundRepeat = "no-repeat";
@@ -1394,9 +1394,9 @@ function applyCrosshairTo(aim){
         aim.style.height = `${32 * settings.size}px`;
         return;
     }
-
+ 
     if(!preset) return;
-
+ 
     if(preset.svg || preset.image){
         const url = preset.svg || preset.image;
         aim.style.backgroundImage = `url('${url}')`;
@@ -1417,34 +1417,17 @@ function applyCrosshairTo(aim){
         aim.style.height = `${preset.style.height * settings.size}px`;
     }
 }
-
+ 
 setInterval(() => {
     if(!data.mods.crosshair) return;
-
-    let aim = document.getElementById("mf-crosshair-fixed");
-
-    if(!aim){
-        aim = document.createElement("div");
-        aim.id = "mf-crosshair-fixed";
-
-        aim.style.position = "fixed";
-        aim.style.left = "50%";
-        aim.style.top = "50%";
-        aim.style.transform = "translate(-50%,-50%)";
-        aim.style.pointerEvents = "none";
-        aim.style.zIndex = "999999";
-
-        document.body.appendChild(aim);
-    }
-
-    applyCrosshairTo(aim);
-
+    let aim = document.querySelector(".aim") || document.querySelector(".sights");
+    if(aim) applyCrosshairTo(aim);
 }, 100);
-
+ 
 function buildCrosshairSettings(){
     const current = data.crosshair;
     settingsPage.insertAdjacentHTML("beforeend", `
-        <div class="mf-settings-title">âŠ• Crosshair (${Object.keys(crosshairPresets).length} presets)</div>
+        <div class="mf-settings-title">⊕ Crosshair (${Object.keys(crosshairPresets).length} presets)</div>
         <div class="mf-setting"><label>Preset</label><select id="mf-crosshair-preset"></select></div>
         <div class="mf-setting"><label>Custom URL</label><input id="mf-crosshair-url" type="text"></div>
         <div class="mf-setting"><label>Size</label><input id="mf-crosshair-size" type="range" min="0.2" max="4" step="0.1"></div>
@@ -1453,7 +1436,7 @@ function buildCrosshairSettings(){
             <div id="mf-crosshair-preview-box"><div id="mf-crosshair-preview"></div></div>
         </div>
     `);
-
+ 
     const presetSelect = document.getElementById("mf-crosshair-preset");
     Object.entries(crosshairPresets).forEach(([key, val]) => {
         const opt = document.createElement("option");
@@ -1463,11 +1446,11 @@ function buildCrosshairSettings(){
     const custom = document.createElement("option");
     custom.value = "custom"; custom.textContent = "Custom URL";
     presetSelect.appendChild(custom);
-
+ 
     presetSelect.value = current.preset;
     document.getElementById("mf-crosshair-url").value  = current.customURL;
     document.getElementById("mf-crosshair-size").value = current.size;
-
+ 
     const preview = document.getElementById("mf-crosshair-preview");
     function updatePreview(){
         preview.style = "";
@@ -1478,37 +1461,37 @@ function buildCrosshairSettings(){
     document.getElementById("mf-crosshair-size").oninput  = e => { data.crosshair.size = parseFloat(e.target.value); save(); updatePreview(); };
     updatePreview();
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    TEXTURE PACK
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 const overrides = {};
 function overrideURL(url){ for(const orig in overrides){ if(url.includes(orig)) return overrides[orig]; } return url; }
 function isGameActive(){ return !document.querySelector(".home"); }
-
+ 
 const imgSrcDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
 Object.defineProperty(HTMLImageElement.prototype, "src", {
     set(value){ if(data.mods.textures && isGameActive()) value = overrideURL(value); return imgSrcDesc.set.call(this, value); },
     get(){ return imgSrcDesc.get.call(this); }
 });
-
+ 
 const origSetAttr = Element.prototype.setAttribute;
 Element.prototype.setAttribute = function(name, value){
     if(data.mods.textures && name === "src" && isGameActive()) value = overrideURL(value);
     return origSetAttr.call(this, name, value);
 };
-
+ 
 function reloadAllImages(){ if(!data.mods.textures) return; document.querySelectorAll(".game img").forEach(img => { img.src = overrideURL(img.src); }); }
-function updateTextureStatus(){ const s = document.getElementById("mf-texture-status"); if(!s) return; s.textContent = !data.mods.textures ? "Mod Disabled" : Object.keys(overrides).length ? "âœ“ Loaded" : "No pack loaded"; }
+function updateTextureStatus(){ const s = document.getElementById("mf-texture-status"); if(!s) return; s.textContent = !data.mods.textures ? "Mod Disabled" : Object.keys(overrides).length ? "✓ Loaded" : "No pack loaded"; }
 function resetAllTextureOverrides(){ for(const k in overrides) delete overrides[k]; if(data.textures) data.textures.overrides = {}; save(); updateTextureStatus(); document.querySelectorAll("img").forEach(img => { img.src = img.src; }); alert("Celestar: Texture pack removed"); }
-function loadTexturePack(e){ const file = e.target.files[0]; if(!file) return; if(!data.mods.textures){ data.mods.textures = true; save(); } file.text().then(text => { const lines = text.split("\n"); const status = document.getElementById("mf-texture-status"); status.textContent = "Loadingâ€¦"; let loaded = false; for(const line of lines){ const idx = line.indexOf(">"); if(idx === -1) continue; const texture = line.slice(0, idx).trim(); const dataURL = line.slice(idx + 1).trim(); if(texture && dataURL){ overrides[texture] = dataURL; loaded = true; } } if(loaded){ updateTextureStatus(); saveTextureOverrides(); reloadAllImages(); } else { status.textContent = "Failed"; } }); }
+function loadTexturePack(e){ const file = e.target.files[0]; if(!file) return; if(!data.mods.textures){ data.mods.textures = true; save(); } file.text().then(text => { const lines = text.split("\n"); const status = document.getElementById("mf-texture-status"); status.textContent = "Loading…"; let loaded = false; for(const line of lines){ const idx = line.indexOf(">"); if(idx === -1) continue; const texture = line.slice(0, idx).trim(); const dataURL = line.slice(idx + 1).trim(); if(texture && dataURL){ overrides[texture] = dataURL; loaded = true; } } if(loaded){ updateTextureStatus(); saveTextureOverrides(); reloadAllImages(); } else { status.textContent = "Failed"; } }); }
 function saveTextureOverrides(){ if(!data.textures || typeof data.textures !== "object") data.textures = {}; data.textures.overrides = {...overrides}; save(); }
 const savedOverrides = data.textures?.overrides;
 if(savedOverrides){ Object.assign(overrides, savedOverrides); reloadAllImages(); }
-
+ 
 function buildTextureSettings(){
     settingsPage.insertAdjacentHTML("beforeend", `
-        <div class="mf-settings-title">ðŸŽ¨ Texture Pack</div>
+        <div class="mf-settings-title">🎨 Texture Pack</div>
         <div class="mf-setting"><label>Upload Pack</label><input type="file" id="mf-texture-upload" accept=".txt"></div>
         <div class="mf-setting"><label>Status</label><span id="mf-texture-status">No pack loaded</span></div>
         <div class="mf-setting"><button id="mf-reset-textures">Reset Texture Pack</button></div>
@@ -1517,16 +1500,16 @@ function buildTextureSettings(){
     document.getElementById("mf-reset-textures").addEventListener("click", resetAllTextureOverrides);
     updateTextureStatus();
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   KEYSTROKES â€” 15 LAYOUTS + 8 THEMES
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+ 
+/* ═══════════════════════════════════════════
+   KEYSTROKES — 15 LAYOUTS + 8 THEMES
+═══════════════════════════════════════════ */
 if(!data.keystrokes.size){ data.keystrokes = {...defaultData.keystrokes}; save(); }
-
+ 
 const ks = document.createElement("div");
 ks.className = "mf-keystrokes";
 document.body.appendChild(ks);
-
+ 
 const keystrokeLayouts = {
     "wasd": `
         <div class="row"><div class="key shift-key">SHF</div><div class="key" data-key="KeyW">W</div><div class="key crouch-key">C</div></div>
@@ -1550,11 +1533,11 @@ const keystrokeLayouts = {
         <div class="row"><div class="key" data-key="Digit1">1</div><div class="key" data-key="Digit2">2</div><div class="key" data-key="Digit3">3</div><div class="key" data-key="Digit4">4</div></div>
     `,
     "arrows": `
-        <div class="row"><div class="key" data-key="ArrowUp">â†‘</div></div>
-        <div class="row"><div class="key" data-key="ArrowLeft">â†</div><div class="key" data-key="ArrowDown">â†“</div><div class="key" data-key="ArrowRight">â†’</div></div>
+        <div class="row"><div class="key" data-key="ArrowUp">↑</div></div>
+        <div class="row"><div class="key" data-key="ArrowLeft">←</div><div class="key" data-key="ArrowDown">↓</div><div class="key" data-key="ArrowRight">→</div></div>
         <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
     `,
-    /* â”€â”€ 10 new layouts â”€â”€ */
+    /* ── 10 new layouts ── */
     "cps_big": `
         <div class="row"><div class="key extra-wide tall cps" data-key="LMB" style="font-size:1.6vh">LEFT<br><span class="cps-disp" style="font-size:1.3vh">0</span></div><div class="key extra-wide tall cps" data-key="RMB" style="font-size:1.6vh">RIGHT<br><span class="cps-disp" style="font-size:1.3vh">0</span></div></div>
     `,
@@ -1564,7 +1547,7 @@ const keystrokeLayouts = {
         <div class="row"><div class="key space" data-key="Space">___</div></div>
     `,
     "pvp_pro": `
-        <div class="row"><div class="key shift-key">â¬†SHF</div><div class="key" data-key="KeyW">W</div><div class="key crouch-key">â¬‡C</div></div>
+        <div class="row"><div class="key shift-key">⬆SHF</div><div class="key" data-key="KeyW">W</div><div class="key crouch-key">⬇C</div></div>
         <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
         <div class="row"><div class="key" data-key="Digit1">1</div><div class="key" data-key="Digit2">2</div><div class="key" data-key="Digit3">3</div></div>
         <div class="row"><div class="key wide cps" data-key="LMB">L<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">R<br><span class="cps-disp">0</span></div></div>
@@ -1580,7 +1563,7 @@ const keystrokeLayouts = {
         <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
     `,
     "survival": `
-        <div class="row"><div class="key shift-key">â‡§</div><div class="key" data-key="KeyW">W</div><div class="key crouch-key">â†™</div></div>
+        <div class="row"><div class="key shift-key">⇧</div><div class="key" data-key="KeyW">W</div><div class="key crouch-key">↙</div></div>
         <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
         <div class="row"><div class="key space" data-key="Space">JUMP</div></div>
         <div class="row"><div class="key" data-key="Digit1">1</div><div class="key" data-key="Digit2">2</div><div class="key" data-key="Digit3">3</div><div class="key" data-key="Digit4">4</div><div class="key" data-key="Digit5">5</div></div>
@@ -1591,19 +1574,19 @@ const keystrokeLayouts = {
         <div class="row"><div class="key" data-key="KeyA" style="width:2.5vh;height:2.5vh;font-size:1vh">A</div><div class="key" data-key="KeyS" style="width:2.5vh;height:2.5vh;font-size:1vh">S</div><div class="key" data-key="KeyD" style="width:2.5vh;height:2.5vh;font-size:1vh">D</div></div>
     `,
     "space_wasd": `
-        <div class="row"><div class="key" data-key="KeyW" style="background:rgba(0,207,255,0.08);border-color:rgba(0,207,255,0.4)">â†‘W</div></div>
+        <div class="row"><div class="key" data-key="KeyW" style="background:rgba(0,207,255,0.08);border-color:rgba(0,207,255,0.4)">↑W</div></div>
         <div class="row">
-            <div class="key" data-key="KeyA" style="background:rgba(123,47,255,0.08);border-color:rgba(123,47,255,0.4)">â†A</div>
-            <div class="key" data-key="KeyS" style="background:rgba(0,207,255,0.08);border-color:rgba(0,207,255,0.4)">â†“S</div>
-            <div class="key" data-key="KeyD" style="background:rgba(123,47,255,0.08);border-color:rgba(123,47,255,0.4)">â†’D</div>
+            <div class="key" data-key="KeyA" style="background:rgba(123,47,255,0.08);border-color:rgba(123,47,255,0.4)">←A</div>
+            <div class="key" data-key="KeyS" style="background:rgba(0,207,255,0.08);border-color:rgba(0,207,255,0.4)">↓S</div>
+            <div class="key" data-key="KeyD" style="background:rgba(123,47,255,0.08);border-color:rgba(123,47,255,0.4)">→D</div>
         </div>
-        <div class="row"><div class="key wide cps" data-key="LMB" style="border-color:rgba(0,207,255,0.4)">âœ¦L<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB" style="border-color:rgba(123,47,255,0.4)">âœ¦R<br><span class="cps-disp">0</span></div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB" style="border-color:rgba(0,207,255,0.4)">✦L<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB" style="border-color:rgba(123,47,255,0.4)">✦R<br><span class="cps-disp">0</span></div></div>
     `,
     "fps_only": `
-        <div class="row"><div class="key shift-key">â¬†</div><div class="key crouch-key">â¬‡</div></div>
+        <div class="row"><div class="key shift-key">⬆</div><div class="key crouch-key">⬇</div></div>
         <div class="row"><div class="key" data-key="KeyW">W</div></div>
         <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
-        <div class="row"><div class="key wide cps" data-key="LMB">ðŸ–±L<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">ðŸ–±R<br><span class="cps-disp">0</span></div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB">🖱L<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">🖱R<br><span class="cps-disp">0</span></div></div>
     `,
     "three_key": `
         <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyW">W</div><div class="key" data-key="KeyD">D</div></div>
@@ -1618,13 +1601,13 @@ const keystrokeLayouts = {
         <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
     `,
 };
-
+ 
 function buildKeystrokesHTML(layout){
     ks.innerHTML = `<div class="key-container">${keystrokeLayouts[layout] || keystrokeLayouts["wasd"]}</div>`;
 }
-
+ 
 buildKeystrokesHTML(data.keystrokes.layout || "wasd");
-
+ 
 function applyKeystrokes(){
     if(!data.mods.keystrokes){ ks.style.display = "none"; return; }
     ks.style.display = "flex";
@@ -1633,28 +1616,28 @@ function applyKeystrokes(){
     ks.style.bottom    = s.y + "vh";
     ks.style.transform = `scale(${s.size})`;
     ks.setAttribute("mf-theme", s.theme);
-
+ 
     document.documentElement.style.setProperty("--mf-pressed-bg",   s.pressedBG);
     document.documentElement.style.setProperty("--mf-pressed-text",  s.pressedText);
-
+ 
     document.querySelectorAll(".mf-keystrokes .cps-disp").forEach(e => {
         e.style.display = s.showCPS ? "block" : "none";
     });
-
+ 
     if(s.arrows){
         const w = document.querySelector('[data-key="KeyW"]');
         const a = document.querySelector('[data-key="KeyA"]');
         const sd = document.querySelector('[data-key="KeyS"]');
         const d = document.querySelector('[data-key="KeyD"]');
-        if(w) w.textContent = "â†‘"; if(a) a.textContent = "â†"; if(sd) sd.textContent = "â†“"; if(d) d.textContent = "â†’";
+        if(w) w.textContent = "↑"; if(a) a.textContent = "←"; if(sd) sd.textContent = "↓"; if(d) d.textContent = "→";
     }
 }
-
+ 
 applyKeystrokes();
-
+ 
 const shiftKey  = () => document.querySelector(".shift-key");
 const crouchKey = () => document.querySelector(".crouch-key");
-
+ 
 document.addEventListener("keydown", e => {
     if(!data.mods.keystrokes) return;
     if(e.code === data.keystrokes.keys.shift  && shiftKey())  shiftKey().classList.add("active");
@@ -1668,7 +1651,7 @@ document.addEventListener("keyup", e => {
     const key = document.querySelector(`[data-key="${e.code}"]`);
     if(key) key.classList.remove("active");
 });
-
+ 
 const lmb = [], rmb = [];
 document.addEventListener("mousedown", e => {
     if(!data.mods.keystrokes) return;
@@ -1681,7 +1664,7 @@ document.addEventListener("mouseup", e => {
     if(e.button === 2) document.querySelector('[data-key="RMB"]')?.classList.remove("active");
 });
 document.addEventListener("contextmenu", e => e.preventDefault());
-
+ 
 function cpsLoop(){
     const now = performance.now();
     while(lmb.length && lmb[0] < now - 1000) lmb.shift();
@@ -1691,7 +1674,7 @@ function cpsLoop(){
     requestAnimationFrame(cpsLoop);
 }
 cpsLoop();
-
+ 
 let dragging = false;
 ks.addEventListener("mousedown", () => dragging = true);
 document.addEventListener("mouseup", () => dragging = false);
@@ -1701,11 +1684,11 @@ document.addEventListener("mousemove", e => {
     data.keystrokes.y = ((innerHeight - e.clientY) / innerHeight) * 100;
     applyKeystrokes(); save();
 });
-
+ 
 function buildKeystrokesSettings(){
     const s = data.keystrokes;
     settingsPage.insertAdjacentHTML("beforeend", `
-        <div class="mf-settings-title">âŒ¨ Keystrokes (${Object.keys(keystrokeLayouts).length} layouts)</div>
+        <div class="mf-settings-title">⌨ Keystrokes (${Object.keys(keystrokeLayouts).length} layouts)</div>
         <div class="mf-setting"><label>Layout</label>
             <select id="ks-layout">
                 <option value="wasd">WASD (Default)</option>
@@ -1733,11 +1716,11 @@ function buildKeystrokesSettings(){
                 <option value="neon">Neon Pink</option>
                 <option value="glass">Glass</option>
                 <option value="dark">Dark</option>
-                <option value="space">Space âœ¦ NEW</option>
-                <option value="cyberpunk">Cyberpunk âœ¦ NEW</option>
-                <option value="ember">Ember âœ¦ NEW</option>
-                <option value="frost">Frost âœ¦ NEW</option>
-                <option value="military">Military âœ¦ NEW</option>
+                <option value="space">Space ✦ NEW</option>
+                <option value="cyberpunk">Cyberpunk ✦ NEW</option>
+                <option value="ember">Ember ✦ NEW</option>
+                <option value="frost">Frost ✦ NEW</option>
+                <option value="military">Military ✦ NEW</option>
             </select>
         </div>
         <div class="mf-setting"><label>Size</label><input type="range" id="ks-size" min="0.6" max="2" step="0.1"></div>
@@ -1749,7 +1732,7 @@ function buildKeystrokesSettings(){
         <div class="mf-setting"><label>Pressed Text</label><input type="text" id="ks-pressed-text"></div>
         <div class="mf-setting"><label>Arrow Icons</label><input type="checkbox" id="ks-arrows"></div>
     `);
-
+ 
     document.getElementById("ks-layout").value           = s.layout || "wasd";
     document.getElementById("ks-theme").value            = s.theme;
     document.getElementById("ks-size").value             = s.size;
@@ -1760,7 +1743,7 @@ function buildKeystrokesSettings(){
     document.getElementById("ks-pressed-bg").value       = s.pressedBG;
     document.getElementById("ks-pressed-text").value     = s.pressedText;
     document.getElementById("ks-arrows").checked         = s.arrows;
-
+ 
     document.getElementById("ks-layout").onchange = e => { data.keystrokes.layout = e.target.value; buildKeystrokesHTML(e.target.value); applyKeystrokes(); save(); };
     document.getElementById("ks-theme").onchange = e => { data.keystrokes.theme = e.target.value; applyKeystrokes(); save(); };
     document.getElementById("ks-size").oninput   = e => { data.keystrokes.size  = parseFloat(e.target.value); applyKeystrokes(); save(); };
@@ -1772,10 +1755,10 @@ function buildKeystrokesSettings(){
     document.getElementById("ks-pressed-text").onchange    = e => { data.keystrokes.pressedText  = e.target.value; applyKeystrokes(); save(); };
     document.getElementById("ks-arrows").onchange   = e => { data.keystrokes.arrows = e.target.checked; applyKeystrokes(); save(); };
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    ZOOM
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 let zooming = false;
 function applyZoom(){
     if(!data.mods.zoom) return;
@@ -1788,10 +1771,10 @@ function applyZoom(){
 setInterval(applyZoom, 100);
 document.addEventListener("keydown", e => { if(e.key.toLowerCase() === "v") zooming = true; });
 document.addEventListener("keyup",   e => { if(e.key.toLowerCase() === "v") { zooming = false; applyZoom(); } });
-
+ 
 function buildZoomSettings(){
     settingsPage.insertAdjacentHTML("beforeend", `
-        <div class="mf-settings-title">ðŸ”­ Zoom</div>
+        <div class="mf-settings-title">🔭 Zoom</div>
         <div class="mf-setting"><label>Zoom Power</label><input type="range" id="zoom-power" min="1.2" max="5" step="0.1"></div>
         <div class="mf-setting"><label style="color:var(--cel-accent)" id="zoom-val">x${data.zoom.power || 2.2}</label></div>
         <div class="mf-setting"><label style="color:var(--cel-muted);font-size:1.2vh">Hold V to zoom</label></div>
@@ -1803,10 +1786,10 @@ function buildZoomSettings(){
         save();
     };
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    FPS + CPS COUNTERS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 let fpsDiv = null, lastTime = performance.now(), frames = 0;
 function injectFPS(){
     if(!data.mods.fps) return;
@@ -1826,7 +1809,7 @@ function fpsLoop(now){
 }
 requestAnimationFrame(fpsLoop);
 setInterval(injectFPS, 250);
-
+ 
 let cpsDiv = null, cpsClicks = [];
 function injectCPS(){
     if(!data.mods.cps) return;
@@ -1848,10 +1831,10 @@ function cpsStatsLoop(){
 }
 requestAnimationFrame(cpsStatsLoop);
 setInterval(injectCPS, 250);
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    CHAT
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 function applyChat(){
     if(!data.mods.chat) return;
     const chat = document.querySelector(".chat");
@@ -1877,10 +1860,10 @@ function applyChat(){
 }
 const chatWait = setInterval(() => { if(!document.querySelector(".chat")) return; clearInterval(chatWait); applyChat(); }, 500);
 setInterval(applyChat, 1000);
-
+ 
 function buildChatSettings(){
     settingsPage.insertAdjacentHTML("beforeend", `
-        <div class="mf-settings-title">ðŸ’¬ Chat</div>
+        <div class="mf-settings-title">💬 Chat</div>
         <div class="mf-setting"><label>Longer Chat</label><input type="checkbox" id="chat-longer"></div>
         <div class="mf-setting"><label>Position</label>
             <select id="chat-pos">
@@ -1898,13 +1881,13 @@ function buildChatSettings(){
     document.getElementById("chat-longer").onchange = e => { data.chat.longerChat = e.target.checked; save(); applyChat(); };
     document.getElementById("chat-pos").onchange    = e => { data.chat.position   = e.target.value;   save(); applyChat(); };
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    THE WAR UTILS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 function buildTheWarSettings(){
     settingsPage.insertAdjacentHTML("beforeend", `
-        <div class="mf-settings-title">âš” The War Utils</div>
+        <div class="mf-settings-title">⚔ The War Utils</div>
         <div class="mf-setting"><label>KDR Indicator</label><input type="checkbox" id="war-kd"></div>
     `);
     document.getElementById("war-kd").checked = data.thewar.kdrIndicator || false;
@@ -1941,13 +1924,13 @@ function updateKD(){
     kdDiv.textContent = `KDR ${deaths === 0 ? kills : (kills / deaths).toFixed(1)}`;
 }
 setInterval(updateKD, 300);
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    DAMAGE VIGNETTE
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 function buildHpHitColorSettings(){
     settingsPage.insertAdjacentHTML("beforeend", `
-        <div class="mf-settings-title">ðŸ’¢ Damage Vignette</div>
+        <div class="mf-settings-title">💢 Damage Vignette</div>
         <div class="mf-setting"><label>Colour</label><input type="text" id="hp-hit-color" placeholder="#ff0000"></div>
     `);
     document.getElementById("hp-hit-color").value = data.hpHitColor.color;
@@ -1965,17 +1948,17 @@ function applyHpHitColor(){
     styleEl.textContent = `.hp-hit { background: radial-gradient(49.99% 49.99% at 50.01% 50.01%, rgba(${r},${g},${b},0.02) 0% 66.66%, rgba(${r},${g},${b},0.02) 89.23%, rgba(${r},${g},${b},0.2) 100%) !important; }`;
 }
 setInterval(() => { if(data.mods.hpHitColor) applyHpHitColor(); }, 500);
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   SPACE CHESTS â€” COSMIC TIER SYSTEM
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+ 
+/* ═══════════════════════════════════════════
+   SPACE CHESTS — COSMIC TIER SYSTEM
+═══════════════════════════════════════════ */
 function getChestTier(itemCount){
     if(itemCount <= 9  || itemCount === 18) return "wood";
     if(itemCount <= 18 || itemCount === 27) return "iron";
     if(itemCount <= 36 || itemCount === 36) return "gold";
     return "diamond";
 }
-
+ 
 function addStarsToChest(chest, tier){
     if(chest.querySelector(".chest-star")) return;
     const colors = { wood:"#cd853f", iron:"#7ab0d0", gold:"#ffd700", diamond:"#00bfff" };
@@ -1986,12 +1969,12 @@ function addStarsToChest(chest, tier){
     for(let i = 0; i < count; i++){
         const star = document.createElement("span");
         star.className = "chest-star";
-        star.textContent = ["âœ¦","â˜…","Â·","âœ§","*"][Math.floor(Math.random()*5)];
+        star.textContent = ["✦","★","·","✧","*"][Math.floor(Math.random()*5)];
         star.style.cssText = `left:${Math.random()*90}%;top:${Math.random()*90}%;color:${color};animation-delay:${Math.random()*2}s;position:absolute;font-size:${6+Math.random()*6}px;pointer-events:none;`;
         chest.appendChild(star);
     }
     if(tier === "gold" || tier === "diamond"){
-        const runes = ["â¬¡","â—ˆ","âŸ","â¬Ÿ","âŒ¬"];
+        const runes = ["⬡","◈","⟁","⬟","⌬"];
         for(let i = 0; i < (tier === "diamond" ? 4 : 2); i++){
             const rune = document.createElement("span");
             rune.className = "chest-rune";
@@ -2001,7 +1984,7 @@ function addStarsToChest(chest, tier){
         }
     }
 }
-
+ 
 function updateBetterChests(){
     if(!data.mods.betterChests) return;
     document.querySelectorAll(".chest").forEach(chest => {
@@ -2009,13 +1992,13 @@ function updateBetterChests(){
         const count    = items.length;
         const tier     = getChestTier(count);
         const tierClass= `mf-chest-${tier}`;
-
+ 
         if(!chest.classList.contains("mf-space-chest")){
             chest.classList.add("mf-space-chest", tierClass);
             chest.style.position = "relative";
             addStarsToChest(chest, tier);
         }
-
+ 
         items.forEach(item => {
             if(!item.classList.contains("mf-chest-item")){
                 item.classList.add("mf-chest-item");
@@ -2024,10 +2007,10 @@ function updateBetterChests(){
     });
 }
 setInterval(updateBetterChests, 150);
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    SPACE INVENTORY
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 function updateSpaceInventory(){
     if(!data.mods.spaceInventory) return;
     const inventory = document.querySelector(".inventory") || document.querySelector(".player-inventory") || document.querySelector("[class*='inventory']");
@@ -2037,24 +2020,24 @@ function updateSpaceInventory(){
     }
 }
 setInterval(updateSpaceInventory, 200);
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    HOME TIP
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 function updateHomeModTip(){
     const home = document.querySelector(".home");
     let tip = document.getElementById("mf-home-tip");
     if(home){
         if(!tip){ tip = document.createElement("div"); tip.id = "mf-home-tip"; document.body.appendChild(tip); }
         const keyName = formatKey(data.keybinds.menu);
-        tip.innerHTML = `âœ¦ Press <span>${keyName}</span> for Celestar v3.0`;
+        tip.innerHTML = `✦ Press <span>${keyName}</span> for Celestar v3.0`;
     } else if(tip){ tip.remove(); }
 }
 setInterval(updateHomeModTip, 200);
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+/* ═══════════════════════════════════════════
    FINAL LOOPS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+═══════════════════════════════════════════ */
 setInterval(applyKeystrokes, 500);
-
+ 
 })();
