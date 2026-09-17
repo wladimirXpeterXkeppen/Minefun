@@ -1,0 +1,2043 @@
+(function() {
+'use strict';
+ 
+const STORAGE_KEY = "mf-modmenu-settings-v3";
+ 
+const defaultData = {
+    mods:{
+        crosshair:false,
+        keystrokes:true,
+        zoom:false,
+        fps:true,
+        cps:false,
+        textures:false,
+        chat:false,
+        thewar:false,
+        hpHitColor:false,
+        betterChests:false,
+        spaceInventory:false
+    },
+    crosshair:{
+        preset:"default",
+        customURL:"",
+        size:1
+    },
+    keystrokes:{
+        x:1,
+        y:2,
+        size:1,
+        theme:"default",
+        showCPS:false,
+        border:false,
+        borderThickness:0.1,
+        borderColour:"#ffffff",
+        pressedBG:"#00cfff",
+        pressedText:"#000000",
+        shadow:true,
+        arrows:false,
+        layout:"wasd",
+        keys:{shift:"ShiftLeft",crouch:"KeyC"}
+    },
+    zoom:{ power: 2.2 },
+    chat:{
+        longerChat:false,
+        position:"left"
+    },
+    thewar:{ kdrIndicator:false },
+    hpHitColor:{ color:"#ff0000" },
+    keybinds:{ menu:"AltLeft" }
+};
+ 
+let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || {};
+data.mods        = {...defaultData.mods,        ...(data.mods        || {})};
+data.crosshair   = {...defaultData.crosshair,   ...(data.crosshair   || {})};
+data.keystrokes  = {...defaultData.keystrokes,  ...(data.keystrokes  || {})};
+data.zoom        = {...defaultData.zoom,        ...(data.zoom        || {})};
+data.chat        = {...defaultData.chat,        ...(data.chat        || {})};
+data.thewar      = {...defaultData.thewar,      ...(data.thewar      || {})};
+data.hpHitColor  = {...defaultData.hpHitColor,  ...(data.hpHitColor  || {})};
+data.keybinds    = {...defaultData.keybinds,    ...(data.keybinds    || {})};
+ 
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+ 
+/* ═══════════════════════════════════════════
+   GLOBAL STYLE
+═══════════════════════════════════════════ */
+const globalStyle = document.createElement("style");
+globalStyle.textContent = `
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@400;500;600&display=swap');
+ 
+:root {
+    --cel-bg:       rgba(4, 8, 20, 0.97);
+    --cel-panel:    rgba(8, 16, 36, 0.95);
+    --cel-border:   rgba(0, 200, 255, 0.2);
+    --cel-accent:   #00cfff;
+    --cel-accent2:  #7b2fff;
+    --cel-accent3:  #ff00ff;
+    --cel-text:     #c8e8ff;
+    --cel-muted:    #5a7a9a;
+    --cel-success:  #00ffb0;
+    --cel-danger:   #ff3c5a;
+    --cel-glow:     0 0 16px rgba(0,207,255,0.3);
+    --cel-font:     'Rajdhani', sans-serif;
+    --cel-body:     'Exo 2', sans-serif;
+}
+ 
+/* ── MENU WRAPPER ── */
+.mf-modmenu {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 999999;
+    font-family: var(--cel-font);
+    display: none;
+    user-select: none;
+}
+ 
+/* ── STAR CANVAS BACKGROUND ── */
+.mf-stars-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    border-radius: 14px;
+    overflow: hidden;
+    z-index: 0;
+}
+ 
+/* ── MAIN PANEL ── */
+.mf-menu {
+    background: var(--cel-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    padding: 0;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    width: 32vh;
+    box-shadow:
+        0 0 0 1px rgba(0,207,255,0.3),
+        0 0 0 2px rgba(123,47,255,0.1),
+        0 0 60px rgba(0,207,255,0.15),
+        0 0 120px rgba(123,47,255,0.1),
+        0 20px 60px rgba(0,0,0,0.8);
+    color: var(--cel-text);
+    font-size: 1.6vh;
+    overflow: hidden;
+    position: relative;
+}
+ 
+/* ── NEON BORDER ANIMATION ── */
+.mf-menu::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px; right: -1px; bottom: -1px;
+    border-radius: 15px;
+    background: linear-gradient(90deg, #00cfff, #7b2fff, #ff00ff, #00cfff);
+    background-size: 300% 100%;
+    animation: neonBorder 4s linear infinite;
+    z-index: -1;
+    opacity: 0.5;
+}
+@keyframes neonBorder {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+}
+ 
+/* ── TITLE BAR ── */
+.mf-title-bar {
+    background: linear-gradient(135deg, rgba(0,207,255,0.08), rgba(123,47,255,0.08), rgba(255,0,255,0.05));
+    border-bottom: 1px solid rgba(0,207,255,0.2);
+    padding: 1.4vh 2vh;
+    display: flex;
+    align-items: center;
+    gap: 1vh;
+    position: relative;
+    z-index: 1;
+}
+ 
+.mf-title-icon {
+    width: 2.8vh;
+    height: 2.8vh;
+    background: linear-gradient(135deg, var(--cel-accent), var(--cel-accent2), var(--cel-accent3));
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4vh;
+    flex-shrink: 0;
+    box-shadow: 0 0 14px rgba(0,207,255,0.6), 0 0 28px rgba(123,47,255,0.3);
+    animation: iconPulse 3s ease-in-out infinite;
+}
+@keyframes iconPulse {
+    0%,100% { box-shadow: 0 0 14px rgba(0,207,255,0.6), 0 0 28px rgba(123,47,255,0.3); }
+    50%      { box-shadow: 0 0 20px rgba(0,207,255,0.9), 0 0 40px rgba(123,47,255,0.5); }
+}
+ 
+.mf-title {
+    font-size: 2vh;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    background: linear-gradient(90deg, #00cfff, #a78bfa, #ff00ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-transform: uppercase;
+    animation: titleShimmer 4s linear infinite;
+    background-size: 200% 100%;
+}
+@keyframes titleShimmer {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+ 
+.mf-version {
+    margin-left: auto;
+    font-size: 1vh;
+    color: var(--cel-accent);
+    letter-spacing: 0.1em;
+    opacity: 0.8;
+}
+ 
+/* ── SECTION HEADERS ── */
+.mf-section-header {
+    font-size: 1vh;
+    font-weight: 700;
+    color: var(--cel-accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.6vh 1.2vh 0.2vh;
+    opacity: 0.7;
+}
+ 
+/* ── MOD LIST ── */
+.mf-mod-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2vh;
+    padding: 0.8vh 0.8vh;
+    position: relative;
+    z-index: 1;
+    overflow-y: auto;
+    max-height: 70vh;
+}
+.mf-mod-list::-webkit-scrollbar { width: 3px; }
+.mf-mod-list::-webkit-scrollbar-track { background: transparent; }
+.mf-mod-list::-webkit-scrollbar-thumb { background: rgba(0,207,255,0.3); border-radius: 99px; }
+ 
+/* ── MOD ROW ── */
+.mf-mod {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.7vh 0.8vh;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+.mf-mod:hover {
+    background: rgba(0,207,255,0.07);
+    border-color: rgba(0,207,255,0.2);
+    box-shadow: 0 0 12px rgba(0,207,255,0.08);
+}
+.mf-mod label {
+    display: flex;
+    align-items: center;
+    gap: 0.8vh;
+    cursor: pointer;
+    font-size: 1.45vh;
+    font-weight: 600;
+    color: var(--cel-text);
+    letter-spacing: 0.03em;
+}
+.mf-mod-icon {
+    font-size: 1.3vh;
+    width: 2vh;
+    text-align: center;
+}
+ 
+/* ── TOGGLE CHECKBOX ── */
+input[type="checkbox"] {
+    appearance: none;
+    width: 3.4vh;
+    height: 1.9vh;
+    border-radius: 99px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    flex-shrink: 0;
+}
+input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    width: 1.4vh;
+    height: 1.4vh;
+    background: #fff;
+    border-radius: 50%;
+    top: 50%;
+    left: 0.25vh;
+    transform: translateY(-50%);
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, var(--cel-accent), var(--cel-accent2));
+    border-color: var(--cel-accent);
+    box-shadow: 0 0 10px rgba(0,207,255,0.5), 0 0 20px rgba(0,207,255,0.2);
+}
+input[type="checkbox"]:checked::after {
+    left: calc(100% - 1.65vh);
+}
+ 
+/* ── SETTINGS GEAR BUTTON ── */
+.mod-settings {
+    appearance: none;
+    width: 2.6vh;
+    height: 2.6vh;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--cel-muted);
+    cursor: pointer;
+    font-size: 1.2vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.mod-settings:hover {
+    background: rgba(0,207,255,0.15);
+    border-color: var(--cel-accent);
+    color: var(--cel-accent);
+    box-shadow: 0 0 10px rgba(0,207,255,0.3);
+    transform: rotate(60deg);
+}
+.mod-settings:disabled {
+    opacity: 0.15;
+    cursor: default;
+}
+.mod-settings:disabled:hover { transform: none; }
+ 
+/* ── DIVIDER ── */
+.mf-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,207,255,0.2), rgba(255,0,255,0.1), transparent);
+    margin: 0.3vh 0;
+}
+ 
+/* ── KEYBIND ROW ── */
+.mf-keybind-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8vh 0.8vh;
+    margin-top: 0.2vh;
+    border-top: 1px solid rgba(0,207,255,0.1);
+}
+#mf-change-key {
+    background: rgba(0,207,255,0.08);
+    border: 1px solid rgba(0,207,255,0.2);
+    color: var(--cel-text);
+    border-radius: 6px;
+    font-size: 1.2vh;
+    font-family: var(--cel-font);
+    padding: 0.5vh 1vh;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+}
+#mf-change-key:hover {
+    background: rgba(0,207,255,0.18);
+    border-color: var(--cel-accent);
+    color: var(--cel-accent);
+    box-shadow: 0 0 10px rgba(0,207,255,0.2);
+}
+#mf-key-display {
+    font-size: 1.4vh;
+    font-weight: 700;
+    color: var(--cel-accent);
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 8px rgba(0,207,255,0.5);
+}
+ 
+/* ── SETTINGS PAGE ── */
+.mf-settings-page {
+    display: none;
+    flex-direction: column;
+    gap: 0.6vh;
+    padding: 1vh;
+    position: relative;
+    z-index: 1;
+    overflow-y: auto;
+    max-height: 72vh;
+}
+.mf-settings-page::-webkit-scrollbar { width: 3px; }
+.mf-settings-page::-webkit-scrollbar-thumb { background: rgba(0,207,255,0.3); border-radius: 99px; }
+ 
+.mf-settings-title {
+    font-size: 1.4vh;
+    font-weight: 700;
+    color: var(--cel-accent);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 0.2vh;
+    padding-bottom: 0.5vh;
+    border-bottom: 1px solid rgba(0,207,255,0.15);
+    text-shadow: 0 0 10px rgba(0,207,255,0.4);
+}
+.mf-setting {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--cel-text);
+    gap: 1vh;
+    padding: 0.4vh 0;
+    font-size: 1.35vh;
+    font-family: var(--cel-body);
+}
+.mf-setting label {
+    color: var(--cel-muted);
+    font-size: 1.25vh;
+    font-weight: 500;
+}
+ 
+/* ── BACK BUTTON ── */
+.mf-back {
+    background: rgba(0,207,255,0.07);
+    border: 1px solid rgba(0,207,255,0.2);
+    color: var(--cel-text);
+    border-radius: 7px;
+    font-size: 1.25vh;
+    font-family: var(--cel-font);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 0.6vh 1.2vh;
+    cursor: pointer;
+    margin-bottom: 0.6vh;
+    display: flex;
+    align-items: center;
+    gap: 0.5vh;
+    transition: all 0.2s;
+    width: fit-content;
+}
+.mf-back:hover {
+    background: rgba(0,207,255,0.15);
+    border-color: var(--cel-accent);
+    color: var(--cel-accent);
+    box-shadow: 0 0 12px rgba(0,207,255,0.2);
+}
+ 
+/* ── SELECT ── */
+select {
+    background: rgba(4,8,20,0.9);
+    border: 1px solid rgba(0,207,255,0.2);
+    color: var(--cel-text);
+    font-size: 1.2vh;
+    font-family: var(--cel-body);
+    border-radius: 6px;
+    padding: 0.4vh 0.8vh;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+select:hover, select:focus {
+    border-color: var(--cel-accent);
+    box-shadow: 0 0 8px rgba(0,207,255,0.2);
+}
+option {
+    background-color: #040814;
+    color: #c8e8ff;
+}
+ 
+/* ── TEXT INPUT ── */
+.mf-modmenu input[type="text"],
+.mf-modmenu input[type="color"] {
+    width: 8vh;
+    height: 2.6vh;
+    padding: 0 0.6vh;
+    border-radius: 6px;
+    border: 1px solid rgba(0,207,255,0.2);
+    background: rgba(4,8,20,0.9);
+    color: var(--cel-text);
+    outline: none;
+    font-size: 1.25vh;
+    font-family: var(--cel-body);
+    text-align: center;
+    transition: border-color 0.2s;
+}
+.mf-modmenu input[type="text"]:focus {
+    border-color: var(--cel-accent);
+    box-shadow: 0 0 8px rgba(0,207,255,0.25);
+}
+ 
+/* ── RANGE SLIDER ── */
+input[type="range"] {
+    width: 11vh;
+    height: 0.5vh;
+    appearance: none;
+    background: rgba(0,207,255,0.12);
+    border-radius: 99px;
+    outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 1.6vh;
+    height: 1.6vh;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cel-accent), var(--cel-accent2));
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(0,207,255,0.6);
+}
+ 
+/* ── TAGS ── */
+.beta-tag {
+    background: linear-gradient(135deg, var(--cel-danger), #ff8c00);
+    color: white;
+    font-size: 0.85em;
+    font-weight: 700;
+    padding: 0.1vh 0.4vh;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+.new-tag {
+    background: linear-gradient(135deg, #00ff88, #00cfff);
+    color: #040814;
+    font-size: 0.85em;
+    font-weight: 700;
+    padding: 0.1vh 0.4vh;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+ 
+/* ── CROSSHAIR PREVIEW ── */
+#mf-crosshair-preview-box {
+    width: 10vh;
+    height: 10vh;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(0,207,255,0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+#mf-crosshair-preview { position: absolute; }
+ 
+/* ── RESET BTN ── */
+#mf-reset-textures {
+    background: linear-gradient(135deg, rgba(255,60,90,0.2), rgba(255,60,90,0.1));
+    border: 1px solid rgba(255,60,90,0.4);
+    color: var(--cel-danger);
+    border-radius: 6px;
+    font-size: 1.2vh;
+    font-family: var(--cel-font);
+    padding: 0.5vh 1vh;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+#mf-reset-textures:hover {
+    background: rgba(255,60,90,0.3);
+    box-shadow: 0 0 12px rgba(255,60,90,0.4);
+}
+ 
+/* ── TEXTURE UPLOAD ── */
+#mf-texture-upload {
+    position: relative;
+    width: 100%;
+    color: transparent;
+}
+#mf-texture-upload::-webkit-file-upload-button { visibility: hidden; }
+#mf-texture-upload::before {
+    content: "Upload";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,207,255,0.08);
+    border: 1px solid rgba(0,207,255,0.2);
+    color: var(--cel-text);
+    border-radius: 6px;
+    padding: 0.3vh 0.8vh;
+    cursor: pointer;
+    font-size: 1.2vh;
+    font-family: var(--cel-font);
+}
+#mf-texture-upload:hover::before {
+    background: rgba(0,207,255,0.15);
+    border-color: var(--cel-accent);
+}
+ 
+/* ══════════════════════════════════
+   FPS / CPS COUNTER
+══════════════════════════════════ */
+.minefun-fps, .minefun-cps {
+    background: rgba(4,8,20,0.9);
+    border: 1px solid rgba(0,207,255,0.25);
+    border-radius: 6px;
+    height: 28px;
+    padding: 0 10px;
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--cel-font);
+    gap: 4px;
+    box-shadow: 0 0 12px rgba(0,207,255,0.15);
+}
+.minefun-fps .coord-symbol,
+.minefun-cps .coord-symbol {
+    color: var(--cel-accent);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-shadow: 0 0 8px rgba(0,207,255,0.5);
+}
+.minefun-fps .fps-value,
+.minefun-cps .cps-value {
+    font-size: 15px;
+    color: #ffffff !important;
+    font-family: var(--cel-font);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+ 
+/* ══════════════════════════════════
+   KEYSTROKES
+══════════════════════════════════ */
+.mf-keystrokes {
+    position: fixed;
+    bottom: 2vh;
+    left: 1vw;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6vh;
+    z-index: 99999;
+    font-family: var(--cel-font);
+    user-select: none;
+}
+.key-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5vh;
+}
+.row {
+    display: flex;
+    gap: 0.5vh;
+    justify-content: center;
+}
+.mf-keystrokes .key {
+    width: 4.5vh;
+    height: 4.5vh;
+    background: rgba(4,8,20,0.85);
+    border-radius: 0.7vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3vh;
+    color: var(--cel-text);
+    transition: all 0.07s;
+    line-height: 1.1;
+    border: 1px solid rgba(0,207,255,0.2);
+    box-shadow: 0 0 8px rgba(0,207,255,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    backdrop-filter: blur(6px);
+}
+.mf-keystrokes .key.active {
+    background: var(--mf-pressed-bg, rgba(0,207,255,0.3)) !important;
+    color: var(--mf-pressed-text, #fff) !important;
+    border-color: var(--cel-accent) !important;
+    box-shadow: 0 0 16px rgba(0,207,255,0.5), 0 0 32px rgba(0,207,255,0.2) !important;
+    transform: scale(0.94);
+}
+.mf-keystrokes .key.wide { width: 7vh; }
+.mf-keystrokes .key.space { width: 14.6vh; }
+.mf-keystrokes .key.tall { height: 7vh; }
+.mf-keystrokes .key.extra-wide { width: 10vh; }
+.cps-disp {
+    font-size: 0.9vh;
+    color: var(--cel-accent);
+    margin-top: 0.2vh;
+    font-weight: 700;
+}
+ 
+/* Celestar theme */
+.mf-keystrokes[mf-theme="celestar"] .key {
+    background: linear-gradient(135deg, rgba(0,207,255,0.12), rgba(123,47,255,0.12));
+    border-color: rgba(0,207,255,0.35);
+}
+/* Rainbow */
+.mf-keystrokes[mf-theme="rainbow"] .key {
+    animation: rainbowcycle 6s linear infinite;
+    border-color: transparent;
+}
+@keyframes rainbowcycle {
+    0%  { background-color: rgba(255,0,0,0.5) }
+    16% { background-color: rgba(255,127,0,0.5) }
+    32% { background-color: rgba(255,255,0,0.5) }
+    48% { background-color: rgba(0,255,0,0.5) }
+    64% { background-color: rgba(0,0,255,0.5) }
+    80% { background-color: rgba(139,0,255,0.5) }
+    100%{ background-color: rgba(255,0,0,0.5) }
+}
+/* Neon theme */
+.mf-keystrokes[mf-theme="neon"] .key {
+    background: rgba(0,0,0,0.7);
+    border: 1px solid #ff00ff;
+    box-shadow: 0 0 12px rgba(255,0,255,0.4), inset 0 0 6px rgba(255,0,255,0.1);
+    color: #ff00ff;
+}
+.mf-keystrokes[mf-theme="neon"] .key.active {
+    background: rgba(255,0,255,0.3) !important;
+    color: #fff !important;
+}
+/* Glass theme */
+.mf-keystrokes[mf-theme="glass"] .key {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(16px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+}
+/* Dark theme */
+.mf-keystrokes[mf-theme="dark"] .key {
+    background: rgba(0,0,0,0.9);
+    border: 1px solid rgba(255,255,255,0.06);
+}
+/* Space theme — new */
+.mf-keystrokes[mf-theme="space"] .key {
+    background: linear-gradient(135deg, rgba(4,8,28,0.9), rgba(10,4,40,0.9));
+    border: 1px solid rgba(0,207,255,0.4);
+    box-shadow: 0 0 10px rgba(0,207,255,0.15), 0 0 20px rgba(123,47,255,0.1), inset 0 1px 0 rgba(0,207,255,0.1);
+    color: #a0dfff;
+}
+.mf-keystrokes[mf-theme="space"] .key.active {
+    background: linear-gradient(135deg, rgba(0,207,255,0.35), rgba(123,47,255,0.35)) !important;
+    box-shadow: 0 0 20px rgba(0,207,255,0.6), 0 0 40px rgba(123,47,255,0.3) !important;
+    color: #fff !important;
+}
+/* Cyberpunk theme — new */
+.mf-keystrokes[mf-theme="cyberpunk"] .key {
+    background: rgba(10,0,20,0.92);
+    border: 1px solid #ff00ff;
+    box-shadow: 0 0 8px rgba(255,0,255,0.3), inset 0 1px 0 rgba(255,0,255,0.1);
+    color: #ff88ff;
+    border-radius: 2px;
+}
+.mf-keystrokes[mf-theme="cyberpunk"] .key.active {
+    background: rgba(255,0,255,0.2) !important;
+    box-shadow: 0 0 20px rgba(255,0,255,0.7), 0 0 40px rgba(255,0,255,0.3) !important;
+    color: #fff !important;
+    border-color: #fff !important;
+}
+/* Ember theme — new */
+.mf-keystrokes[mf-theme="ember"] .key {
+    background: linear-gradient(135deg, rgba(30,8,0,0.9), rgba(20,5,0,0.9));
+    border: 1px solid rgba(255,80,0,0.5);
+    box-shadow: 0 0 8px rgba(255,80,0,0.15), inset 0 1px 0 rgba(255,80,0,0.1);
+    color: #ffaa66;
+}
+.mf-keystrokes[mf-theme="ember"] .key.active {
+    background: linear-gradient(135deg, rgba(255,80,0,0.35), rgba(255,160,0,0.2)) !important;
+    box-shadow: 0 0 20px rgba(255,80,0,0.6), 0 0 40px rgba(255,160,0,0.3) !important;
+    color: #fff !important;
+    border-color: #ff8800 !important;
+}
+/* Frost theme — new */
+.mf-keystrokes[mf-theme="frost"] .key {
+    background: linear-gradient(135deg, rgba(200,240,255,0.1), rgba(150,210,255,0.06));
+    border: 1px solid rgba(180,230,255,0.35);
+    box-shadow: 0 0 8px rgba(180,230,255,0.12), inset 0 1px 0 rgba(255,255,255,0.2);
+    color: #c8f0ff;
+    backdrop-filter: blur(12px);
+}
+.mf-keystrokes[mf-theme="frost"] .key.active {
+    background: rgba(150,210,255,0.3) !important;
+    box-shadow: 0 0 18px rgba(180,230,255,0.5), 0 0 36px rgba(150,210,255,0.25) !important;
+    color: #fff !important;
+    border-color: #a0e0ff !important;
+}
+/* Military theme — new */
+.mf-keystrokes[mf-theme="military"] .key {
+    background: rgba(10,20,8,0.9);
+    border: 1px solid rgba(60,120,40,0.5);
+    box-shadow: inset 0 1px 0 rgba(60,120,40,0.12);
+    color: #88cc66;
+    border-radius: 4px;
+}
+.mf-keystrokes[mf-theme="military"] .key.active {
+    background: rgba(60,120,40,0.4) !important;
+    box-shadow: 0 0 16px rgba(60,200,40,0.5) !important;
+    color: #ccff88 !important;
+    border-color: #88cc66 !important;
+}
+ 
+/* ══════════════════════════════════
+   HOME TIP
+══════════════════════════════════ */
+#mf-home-tip {
+    position: fixed;
+    bottom: 2vh;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.7vh 2vh;
+    background: rgba(4,8,20,0.92);
+    border: 1px solid rgba(0,207,255,0.25);
+    color: var(--cel-text);
+    font-family: var(--cel-font);
+    font-size: 1.5vh;
+    font-weight: 600;
+    border-radius: 10px;
+    z-index: 999999;
+    letter-spacing: 0.04em;
+    box-shadow: 0 0 24px rgba(0,207,255,0.15), 0 0 48px rgba(123,47,255,0.08);
+    backdrop-filter: blur(12px);
+}
+#mf-home-tip span { color: var(--cel-accent); text-shadow: 0 0 8px rgba(0,207,255,0.5); }
+ 
+/* ══════════════════════════════════
+   SPACE CHESTS
+══════════════════════════════════ */
+@keyframes starFloat {
+    0%,100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; }
+    50%      { transform: translateY(-3px) rotate(180deg); opacity: 1; }
+}
+@keyframes neonPulse {
+    0%,100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+}
+@keyframes orbitalRing {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+@keyframes runeGlow {
+    0%,100% { text-shadow: 0 0 4px currentColor; }
+    50%      { text-shadow: 0 0 12px currentColor, 0 0 24px currentColor; }
+}
+ 
+.mf-space-chest {
+    position: relative;
+    border-radius: 10px;
+    overflow: visible !important;
+    transition: all 0.3s ease;
+}
+.mf-space-chest::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 12px;
+    z-index: -1;
+    animation: neonPulse 2s ease-in-out infinite;
+}
+.mf-space-chest .chest-star {
+    position: absolute;
+    font-size: 8px;
+    pointer-events: none;
+    animation: starFloat 2s ease-in-out infinite;
+}
+.mf-space-chest .chest-rune {
+    position: absolute;
+    font-size: 10px;
+    pointer-events: none;
+    animation: runeGlow 3s ease-in-out infinite;
+}
+ 
+/* Wood tier — bronze/basic */
+.mf-chest-wood {
+    background: linear-gradient(135deg, #1a0c00 0%, #2d1500 50%, #1a0c00 100%) !important;
+    border: 1px solid #8B4513 !important;
+    box-shadow: 0 0 6px rgba(139,69,19,0.3) !important;
+}
+.mf-chest-wood::before { background: linear-gradient(90deg, #8B4513, #cd853f, #8B4513); opacity: 0.4; }
+.mf-chest-wood .chest-star { color: #cd853f; }
+.mf-chest-wood .mf-chest-item {
+    background: linear-gradient(135deg, #2d1500, #3d1e00) !important;
+    border: 1px solid rgba(139,69,19,0.4) !important;
+}
+ 
+/* Iron tier — grey/silver */
+.mf-chest-iron {
+    background: linear-gradient(135deg, #0a0f14 0%, #141e28 50%, #0a0f14 100%) !important;
+    border: 1px solid #4a7090 !important;
+    box-shadow: 0 0 8px rgba(74,112,144,0.3) !important;
+}
+.mf-chest-iron::before { background: linear-gradient(90deg, #4a7090, #7ab0d0, #4a7090); opacity: 0.4; }
+.mf-chest-iron .chest-star { color: #7ab0d0; }
+.mf-chest-iron .mf-chest-item {
+    background: linear-gradient(135deg, #0d1820, #121f2a) !important;
+    border: 1px solid rgba(74,112,144,0.4) !important;
+}
+ 
+/* Gold tier — legendary gold */
+.mf-chest-gold {
+    background: linear-gradient(135deg, #1a1000 0%, #2d1f00 40%, #1a1200 100%) !important;
+    border: 2px solid #c8920a !important;
+    box-shadow: 0 0 14px rgba(200,146,10,0.4), 0 0 28px rgba(200,146,10,0.15) !important;
+}
+.mf-chest-gold::before { background: linear-gradient(90deg, #c8920a, #ffd700, #e8a800, #ffd700, #c8920a); opacity: 0.6; }
+.mf-chest-gold .chest-star { color: #ffd700; }
+.mf-chest-gold .chest-rune { color: #ffd700; }
+.mf-chest-gold .mf-chest-item {
+    background: linear-gradient(135deg, #1f1500, #2a1e00) !important;
+    border: 1px solid rgba(200,146,10,0.5) !important;
+}
+ 
+/* Diamond tier — legendary blue/cosmic */
+.mf-chest-diamond {
+    background: linear-gradient(135deg, #000820 0%, #001040 30%, #000c30 70%, #000820 100%) !important;
+    border: 2px solid #00bfff !important;
+    box-shadow: 0 0 20px rgba(0,191,255,0.5), 0 0 40px rgba(0,100,255,0.2), 0 0 60px rgba(123,47,255,0.1) !important;
+}
+.mf-chest-diamond::before { background: linear-gradient(90deg, #00bfff, #7b2fff, #ff00ff, #00bfff); opacity: 0.7; animation: neonPulse 1.5s ease-in-out infinite; }
+.mf-chest-diamond .chest-star { color: #00bfff; }
+.mf-chest-diamond .chest-rune { color: #7b2fff; }
+.mf-chest-diamond .mf-chest-item {
+    background: linear-gradient(135deg, #000c28, #001038) !important;
+    border: 1px solid rgba(0,191,255,0.4) !important;
+    box-shadow: inset 0 0 6px rgba(0,191,255,0.1) !important;
+}
+ 
+/* ══════════════════════════════════
+   SPACE INVENTORY
+══════════════════════════════════ */
+@keyframes inventoryFloat {
+    0%,100% { box-shadow: 0 0 20px rgba(0,207,255,0.2), 0 0 40px rgba(123,47,255,0.1); }
+    50%      { box-shadow: 0 0 30px rgba(0,207,255,0.35), 0 0 60px rgba(123,47,255,0.2); }
+}
+@keyframes scanLine {
+    from { transform: translateY(-100%); opacity: 0.3; }
+    to   { transform: translateY(400%); opacity: 0; }
+}
+@keyframes cornerPulse {
+    0%,100% { opacity: 0.5; }
+    50%      { opacity: 1; }
+}
+ 
+.mf-space-inventory {
+    background: linear-gradient(135deg, rgba(0,4,20,0.97) 0%, rgba(0,8,30,0.97) 50%, rgba(4,0,24,0.97) 100%) !important;
+    border: 1px solid rgba(0,207,255,0.3) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 0 40px rgba(0,207,255,0.2), 0 0 80px rgba(123,47,255,0.1) !important;
+    position: relative;
+    animation: inventoryFloat 4s ease-in-out infinite;
+    overflow: hidden;
+}
+.mf-space-inventory::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,207,255,0.8), transparent);
+    animation: scanLine 3s linear infinite;
+    pointer-events: none;
+    z-index: 999;
+}
+.mf-space-inventory .inventory-title,
+.mf-space-inventory .inv-title {
+    background: linear-gradient(90deg, #00cfff, #7b2fff) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
+    text-shadow: none !important;
+}
+.mf-space-inventory .inventory-slot,
+.mf-space-inventory .inv-slot,
+.mf-space-inventory .slot {
+    background: linear-gradient(135deg, rgba(0,10,30,0.9), rgba(0,6,24,0.9)) !important;
+    border: 1px solid rgba(0,207,255,0.2) !important;
+    border-radius: 6px !important;
+    box-shadow: inset 0 0 8px rgba(0,207,255,0.06) !important;
+    transition: all 0.2s !important;
+    position: relative;
+}
+.mf-space-inventory .inventory-slot:hover,
+.mf-space-inventory .inv-slot:hover,
+.mf-space-inventory .slot:hover {
+    border-color: rgba(0,207,255,0.5) !important;
+    box-shadow: 0 0 12px rgba(0,207,255,0.25), inset 0 0 8px rgba(0,207,255,0.1) !important;
+}
+.mf-space-inventory .inventory-slot.selected,
+.mf-space-inventory .inv-slot.active,
+.mf-space-inventory .slot.selected {
+    border-color: rgba(0,207,255,0.8) !important;
+    box-shadow: 0 0 20px rgba(0,207,255,0.4), inset 0 0 10px rgba(0,207,255,0.15) !important;
+    background: linear-gradient(135deg, rgba(0,207,255,0.15), rgba(123,47,255,0.1)) !important;
+}
+`;
+document.head.appendChild(globalStyle);
+ 
+/* ═══════════════════════════════════════════
+   BUILD MENU HTML
+═══════════════════════════════════════════ */
+const menu = document.createElement("div");
+menu.className = "mf-modmenu";
+menu.innerHTML = `
+<div class="mf-menu">
+    <div class="mf-title-bar">
+        <div class="mf-title-icon">✦</div>
+        <div class="mf-title">Celestar</div>
+        <div class="mf-version">v3.0</div>
+    </div>
+ 
+    <div class="mf-mod-list">
+        <div class="mf-section-header">VISUAL</div>
+ 
+        <div class="mf-mod" data-mod="crosshair">
+            <label><span class="mf-mod-icon">⊕</span><input type="checkbox" class="mod-toggle"> Custom Crosshair</label>
+            <button class="mod-settings">⚙</button>
+        </div>
+ 
+        <div class="mf-mod" data-mod="textures">
+            <label><span class="mf-mod-icon">🎨</span><input type="checkbox" class="mod-toggle"> Texture Pack <span class="beta-tag">BETA</span></label>
+            <button class="mod-settings">⚙</button>
+        </div>
+ 
+        <div class="mf-mod" data-mod="keystrokes">
+            <label><span class="mf-mod-icon">⌨</span><input type="checkbox" class="mod-toggle"> Keystrokes</label>
+            <button class="mod-settings">⚙</button>
+        </div>
+ 
+        <div class="mf-mod" data-mod="hpHitColor">
+            <label><span class="mf-mod-icon">💢</span><input type="checkbox" class="mod-toggle"> Damage Vignette</label>
+            <button class="mod-settings">⚙</button>
+        </div>
+ 
+        <div class="mf-divider"></div>
+        <div class="mf-section-header">GAMEPLAY</div>
+ 
+        <div class="mf-mod" data-mod="zoom">
+            <label><span class="mf-mod-icon">🔭</span><input type="checkbox" class="mod-toggle"> Zoom</label>
+            <button class="mod-settings">⚙</button>
+        </div>
+ 
+        <div class="mf-mod" data-mod="chat">
+            <label><span class="mf-mod-icon">💬</span><input type="checkbox" class="mod-toggle"> Chat</label>
+            <button class="mod-settings">⚙</button>
+        </div>
+ 
+        <div class="mf-mod" data-mod="thewar">
+            <label><span class="mf-mod-icon">⚔</span><input type="checkbox" class="mod-toggle"> The War Utils</label>
+            <button class="mod-settings">⚙</button>
+        </div>
+ 
+        <div class="mf-mod" data-mod="betterChests">
+            <label><span class="mf-mod-icon">🌌</span><input type="checkbox" class="mod-toggle"> Space Chests <span class="new-tag">NEW</span></label>
+            <button class="mod-settings" disabled>⚙</button>
+        </div>
+ 
+        <div class="mf-mod" data-mod="spaceInventory">
+            <label><span class="mf-mod-icon">🚀</span><input type="checkbox" class="mod-toggle"> Space Inventory <span class="new-tag">NEW</span></label>
+            <button class="mod-settings" disabled>⚙</button>
+        </div>
+ 
+        <div class="mf-divider"></div>
+        <div class="mf-section-header">HUD</div>
+ 
+        <div class="mf-mod" data-mod="fps">
+            <label><span class="mf-mod-icon">📊</span><input type="checkbox" class="mod-toggle"> FPS Counter</label>
+            <button class="mod-settings" disabled>⚙</button>
+        </div>
+ 
+        <div class="mf-mod" data-mod="cps">
+            <label><span class="mf-mod-icon">🖱</span><input type="checkbox" class="mod-toggle"> CPS Counter</label>
+            <button class="mod-settings" disabled>⚙</button>
+        </div>
+ 
+        <div class="mf-divider"></div>
+ 
+        <div class="mf-keybind-row">
+            <button id="mf-change-key">⌨ Menu Key</button>
+            <span id="mf-key-display">ALT</span>
+        </div>
+    </div>
+ 
+    <div class="mf-settings-page"></div>
+</div>
+`;
+document.body.appendChild(menu);
+ 
+/* ═══════════════════════════════════════════
+   TOGGLE STATES
+═══════════════════════════════════════════ */
+let open = false;
+document.addEventListener("keydown", e => {
+    if(e.code === data.keybinds.menu){
+        open = !open;
+        menu.style.display = open ? "block" : "none";
+    }
+});
+ 
+document.querySelectorAll(".mf-mod").forEach(row => {
+    const mod = row.dataset.mod;
+    const toggle = row.querySelector(".mod-toggle");
+    toggle.checked = data.mods[mod];
+    toggle.onchange = () => { data.mods[mod] = toggle.checked; save(); };
+});
+ 
+const settingsPage = document.querySelector(".mf-settings-page");
+const modList      = document.querySelector(".mf-mod-list");
+ 
+document.querySelectorAll(".mod-settings").forEach(btn => {
+    btn.onclick = () => {
+        const mod = btn.parentElement.dataset.mod;
+        openSettings(mod);
+    };
+});
+ 
+function openSettings(mod){
+    settingsPage.innerHTML = "";
+    settingsPage.style.display = "flex";
+    modList.style.display = "none";
+ 
+    const back = document.createElement("button");
+    back.innerHTML = "← Back";
+    back.className = "mf-back";
+    back.onclick = () => {
+        settingsPage.style.display = "none";
+        settingsPage.innerHTML = "";
+        modList.style.display = "flex";
+    };
+    settingsPage.appendChild(back);
+ 
+    if(mod === "crosshair")  buildCrosshairSettings();
+    if(mod === "keystrokes") buildKeystrokesSettings();
+    if(mod === "textures")   buildTextureSettings();
+    if(mod === "chat")       buildChatSettings();
+    if(mod === "thewar")     buildTheWarSettings();
+    if(mod === "hpHitColor") buildHpHitColorSettings();
+    if(mod === "zoom")       buildZoomSettings();
+}
+ 
+/* ═══════════════════════════════════════════
+   KEYBIND
+═══════════════════════════════════════════ */
+const keyBtn     = document.getElementById("mf-change-key");
+const keyDisplay = document.getElementById("mf-key-display");
+ 
+function formatKey(code){
+    return code.replace("Key","").replace("Digit","").replace("Left","").replace("Right","");
+}
+keyDisplay.textContent = formatKey(data.keybinds.menu);
+ 
+let waitingKey = false;
+keyBtn.onclick = () => { keyBtn.textContent = "Press a key…"; waitingKey = true; };
+ 
+document.addEventListener("keydown", e => {
+    if(!waitingKey) return;
+    e.preventDefault();
+    data.keybinds.menu = e.code;
+    save();
+    keyDisplay.textContent = formatKey(e.code);
+    keyBtn.innerHTML = "⌨ Menu Key";
+    waitingKey = false;
+    updateHomeModTip();
+});
+ 
+/* ═══════════════════════════════════════════
+   CROSSHAIR — 30 PRESETS (originals + 10 new + 10 more new)
+═══════════════════════════════════════════ */
+const crosshairPresets = {
+    /* ── originals ── */
+    "default":  { label:"Default",   style:{ backgroundColor:"#fff", border:"2px solid #111", borderRadius:"70.5px", width:1,  height:1  }},
+    "plus1":    { label:"Plus 1",    image:"https://celestarminefun.github.io/crosshairs/plus1.png",    style:{ border:"none", borderRadius:"0", width:32, height:32 }},
+    "plus2":    { label:"Plus 2",    image:"https://celestarminefun.github.io/crosshairs/plus2.png",    style:{ border:"none", borderRadius:"0", width:32, height:32 }},
+    "plus3":    { label:"Plus 3",    image:"https://celestarminefun.github.io/crosshairs/plus3.png",    style:{ border:"none", borderRadius:"0", width:32, height:32 }},
+    "plus4":    { label:"Plus 4",    image:"https://celestarminefun.github.io/crosshairs/plus4.png",    style:{ border:"none", borderRadius:"0", width:32, height:32 }},
+    "plus5":    { label:"Plus 5",    image:"https://celestarminefun.github.io/crosshairs/plus5.png",    style:{ border:"none", borderRadius:"0", width:32, height:32 }},
+    "circle1":  { label:"Circle 1",  image:"https://celestarminefun.github.io/crosshairs/circle1.png",  style:{ border:"none", borderRadius:"0", width:32, height:32 }},
+    "circle2":  { label:"Circle 2",  image:"https://celestarminefun.github.io/crosshairs/circle2.png",  style:{ border:"none", borderRadius:"0", width:32, height:32 }},
+    "cross":    { label:"Cross",     image:"https://celestarminefun.github.io/crosshairs/cross.png",     style:{ border:"none", borderRadius:"0", width:32, height:32 }},
+    "eye":      { label:"Eye",       image:"https://celestarminefun.github.io/crosshairs/eye.png",       style:{ border:"none", borderRadius:"0", width:32, height:32 }},
+    "triangle": { label:"Triangle",  image:"https://celestarminefun.github.io/crosshairs/triangle.png",  style:{ border:"none", borderRadius:"0", width:32, height:32 }},
+ 
+    /* ── batch 2 SVG crosshairs ── */
+    "neo_dot":      { label:"Neo Dot",      svg: makeSVG_NeoDot()      },
+    "sharp_cross":  { label:"Sharp Cross",  svg: makeSVG_SharpCross()  },
+    "sniper":       { label:"Sniper",       svg: makeSVG_Sniper()      },
+    "gap_plus":     { label:"Gap Plus",     svg: makeSVG_GapPlus()     },
+    "circle_dot":   { label:"Circle Dot",   svg: makeSVG_CircleDot()   },
+    "diamond":      { label:"Diamond",      svg: makeSVG_Diamond()     },
+    "arrow":        { label:"Arrow",        svg: makeSVG_Arrow()       },
+    "hex":          { label:"Hex",          svg: makeSVG_Hex()         },
+    "brackets":     { label:"Brackets",     svg: makeSVG_Brackets()    },
+    "nano":         { label:"Nano",         svg: makeSVG_Nano()        },
+ 
+    /* ── batch 3 — 10 brand new crosshairs ── */
+    "pulse":        { label:"Pulse",        svg: makeSVG_Pulse()       },
+    "wing":         { label:"Wing",         svg: makeSVG_Wing()        },
+    "reactor":      { label:"Reactor",      svg: makeSVG_Reactor()     },
+    "ghost":        { label:"Ghost",        svg: makeSVG_Ghost()       },
+    "asterisk":     { label:"Asterisk",     svg: makeSVG_Asterisk()    },
+    "double_ring":  { label:"Double Ring",  svg: makeSVG_DoubleRing()  },
+    "v_shape":      { label:"V-Shape",      svg: makeSVG_VShape()      },
+    "target_pro":   { label:"Target Pro",   svg: makeSVG_TargetPro()   },
+    "halo":         { label:"Halo",         svg: makeSVG_Halo()        },
+    "star_aim":     { label:"Star Aim",     svg: makeSVG_StarAim()     },
+};
+ 
+/* SVG crosshair builders */
+function svgWrap(inner, size=32){
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${inner}</svg>`
+    )}`;
+}
+ 
+/* Batch 2 builders */
+function makeSVG_NeoDot(){
+    return svgWrap(`
+        <line x1="16" y1="2"  x2="16" y2="10" stroke="#00cfff" stroke-width="2" stroke-linecap="round"/>
+        <line x1="16" y1="22" x2="16" y2="30" stroke="#00cfff" stroke-width="2" stroke-linecap="round"/>
+        <line x1="2"  y1="16" x2="10" y2="16" stroke="#00cfff" stroke-width="2" stroke-linecap="round"/>
+        <line x1="22" y1="16" x2="30" y2="16" stroke="#00cfff" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="16" cy="16" r="2" fill="#00cfff"/>
+    `);
+}
+function makeSVG_SharpCross(){
+    return svgWrap(`
+        <line x1="16" y1="0"  x2="16" y2="32" stroke="#ffffff" stroke-width="1.5"/>
+        <line x1="0"  y1="16" x2="32" y2="16" stroke="#ffffff" stroke-width="1.5"/>
+    `);
+}
+function makeSVG_Sniper(){
+    return svgWrap(`
+        <circle cx="16" cy="16" r="14" stroke="#00ff88" stroke-width="1" fill="none" opacity="0.6"/>
+        <circle cx="16" cy="16" r="8"  stroke="#00ff88" stroke-width="0.8" fill="none" opacity="0.8"/>
+        <line x1="16" y1="2"  x2="16" y2="10" stroke="#00ff88" stroke-width="1.2"/>
+        <line x1="16" y1="22" x2="16" y2="30" stroke="#00ff88" stroke-width="1.2"/>
+        <line x1="2"  y1="16" x2="10" y2="16" stroke="#00ff88" stroke-width="1.2"/>
+        <line x1="22" y1="16" x2="30" y2="16" stroke="#00ff88" stroke-width="1.2"/>
+        <circle cx="16" cy="16" r="1.5" fill="#00ff88"/>
+    `);
+}
+function makeSVG_GapPlus(){
+    return svgWrap(`
+        <line x1="16" y1="3"  x2="16" y2="11" stroke="#ff9900" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="16" y1="21" x2="16" y2="29" stroke="#ff9900" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="3"  y1="16" x2="11" y2="16" stroke="#ff9900" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="21" y1="16" x2="29" y2="16" stroke="#ff9900" stroke-width="2.5" stroke-linecap="round"/>
+    `);
+}
+function makeSVG_CircleDot(){
+    return svgWrap(`
+        <circle cx="16" cy="16" r="10" stroke="#ffffff" stroke-width="1.5" fill="none"/>
+        <circle cx="16" cy="16" r="2"  fill="#ffffff"/>
+        <line x1="16" y1="2"  x2="16" y2="6"  stroke="#ffffff" stroke-width="1.5"/>
+        <line x1="16" y1="26" x2="16" y2="30" stroke="#ffffff" stroke-width="1.5"/>
+        <line x1="2"  y1="16" x2="6"  y2="16" stroke="#ffffff" stroke-width="1.5"/>
+        <line x1="26" y1="16" x2="30" y2="16" stroke="#ffffff" stroke-width="1.5"/>
+    `);
+}
+function makeSVG_Diamond(){
+    return svgWrap(`
+        <polygon points="16,4 28,16 16,28 4,16" stroke="#e040fb" stroke-width="1.5" fill="none"/>
+        <circle cx="16" cy="16" r="2" fill="#e040fb"/>
+    `);
+}
+function makeSVG_Arrow(){
+    return svgWrap(`
+        <polygon points="16,4 20,12 18,12 18,28 14,28 14,12 12,12" fill="#ff4444" opacity="0.9"/>
+        <circle cx="16" cy="16" r="1.5" fill="#ffffff"/>
+    `);
+}
+function makeSVG_Hex(){
+    return svgWrap(`
+        <polygon points="16,4 26,10 26,22 16,28 6,22 6,10" stroke="#00cfff" stroke-width="1.5" fill="none" opacity="0.7"/>
+        <circle cx="16" cy="16" r="2" fill="#00cfff"/>
+    `);
+}
+function makeSVG_Brackets(){
+    return svgWrap(`
+        <path d="M8,8 L4,8 L4,24 L8,24"   stroke="#ffffff" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M24,8 L28,8 L28,24 L24,24" stroke="#ffffff" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <circle cx="16" cy="16" r="1.5" fill="#ffffff"/>
+    `);
+}
+function makeSVG_Nano(){
+    return svgWrap(`
+        <circle cx="16" cy="16" r="1" fill="#00cfff"/>
+        <line x1="16" y1="12" x2="16" y2="14" stroke="#00cfff" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="16" y1="18" x2="16" y2="20" stroke="#00cfff" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="12" y1="16" x2="14" y2="16" stroke="#00cfff" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="18" y1="16" x2="20" y2="16" stroke="#00cfff" stroke-width="1.5" stroke-linecap="round"/>
+    `);
+}
+ 
+/* Batch 3 — 10 new */
+function makeSVG_Pulse(){
+    return svgWrap(`
+        <circle cx="16" cy="16" r="12" stroke="#00cfff" stroke-width="0.8" fill="none" opacity="0.4"/>
+        <circle cx="16" cy="16" r="7"  stroke="#00cfff" stroke-width="1"   fill="none" opacity="0.7"/>
+        <circle cx="16" cy="16" r="2"  fill="#00cfff"/>
+        <line x1="16" y1="4"  x2="16" y2="9"  stroke="#00cfff" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="16" y1="23" x2="16" y2="28" stroke="#00cfff" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="4"  y1="16" x2="9"  y2="16" stroke="#00cfff" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="23" y1="16" x2="28" y2="16" stroke="#00cfff" stroke-width="1.5" stroke-linecap="round"/>
+    `);
+}
+function makeSVG_Wing(){
+    return svgWrap(`
+        <path d="M4,16 L12,10 L12,14 L20,14 L20,18 L12,18 L12,22 Z" fill="#ff00ff" opacity="0.85"/>
+        <path d="M28,16 L20,10 L20,14 L12,14 L12,18 L20,18 L20,22 Z" fill="#ff00ff" opacity="0.85"/>
+        <circle cx="16" cy="16" r="1.5" fill="#fff"/>
+    `);
+}
+function makeSVG_Reactor(){
+    return svgWrap(`
+        <circle cx="16" cy="16" r="11" stroke="#7b2fff" stroke-width="1.2" fill="none"/>
+        <line x1="16" y1="5"  x2="16" y2="11" stroke="#7b2fff" stroke-width="2" stroke-linecap="round"/>
+        <line x1="16" y1="21" x2="16" y2="27" stroke="#7b2fff" stroke-width="2" stroke-linecap="round"/>
+        <line x1="5"  y1="16" x2="11" y2="16" stroke="#7b2fff" stroke-width="2" stroke-linecap="round"/>
+        <line x1="21" y1="16" x2="27" y2="16" stroke="#7b2fff" stroke-width="2" stroke-linecap="round"/>
+        <line x1="8"  y1="8"  x2="12" y2="12" stroke="#7b2fff" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+        <line x1="20" y1="20" x2="24" y2="24" stroke="#7b2fff" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+        <line x1="24" y1="8"  x2="20" y2="12" stroke="#7b2fff" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+        <line x1="8"  y1="24" x2="12" y2="20" stroke="#7b2fff" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+        <circle cx="16" cy="16" r="2.5" fill="#7b2fff"/>
+    `);
+}
+function makeSVG_Ghost(){
+    return svgWrap(`
+        <circle cx="16" cy="16" r="10" stroke="#ffffff" stroke-width="1" fill="none" opacity="0.3"/>
+        <circle cx="16" cy="16" r="6"  stroke="#ffffff" stroke-width="0.8" fill="none" opacity="0.5"/>
+        <circle cx="16" cy="16" r="1.5" fill="#ffffff" opacity="0.9"/>
+        <line x1="16" y1="6"  x2="16" y2="10" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-linecap="round" stroke-dasharray="1 2"/>
+        <line x1="16" y1="22" x2="16" y2="26" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-linecap="round" stroke-dasharray="1 2"/>
+        <line x1="6"  y1="16" x2="10" y2="16" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-linecap="round" stroke-dasharray="1 2"/>
+        <line x1="22" y1="16" x2="26" y2="16" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-linecap="round" stroke-dasharray="1 2"/>
+    `);
+}
+function makeSVG_Asterisk(){
+    return svgWrap(`
+        <line x1="16" y1="4"  x2="16" y2="28" stroke="#ff9900" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="4"  y1="16" x2="28" y2="16" stroke="#ff9900" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="7"  y1="7"  x2="25" y2="25" stroke="#ff9900" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="25" y1="7"  x2="7"  y2="25" stroke="#ff9900" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="16" cy="16" r="2" fill="#fff"/>
+    `);
+}
+function makeSVG_DoubleRing(){
+    return svgWrap(`
+        <circle cx="16" cy="16" r="13" stroke="#00ff88" stroke-width="1" fill="none"/>
+        <circle cx="16" cy="16" r="9"  stroke="#00ff88" stroke-width="1.5" fill="none"/>
+        <circle cx="16" cy="16" r="2"  fill="#00ff88"/>
+        <line x1="16" y1="3"  x2="16" y2="7"  stroke="#00ff88" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="16" y1="25" x2="16" y2="29" stroke="#00ff88" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="3"  y1="16" x2="7"  y2="16" stroke="#00ff88" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="25" y1="16" x2="29" y2="16" stroke="#00ff88" stroke-width="1.2" stroke-linecap="round"/>
+    `);
+}
+function makeSVG_VShape(){
+    return svgWrap(`
+        <path d="M6,6 L16,20 L26,6" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="16" y1="20" x2="16" y2="29" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="16" cy="16" r="1.5" fill="#00cfff"/>
+    `);
+}
+function makeSVG_TargetPro(){
+    return svgWrap(`
+        <circle cx="16" cy="16" r="11" stroke="#ff3c5a" stroke-width="1" fill="none"/>
+        <circle cx="16" cy="16" r="6"  stroke="#ff3c5a" stroke-width="2" fill="none"/>
+        <line x1="16" y1="3"  x2="16" y2="10" stroke="#ff3c5a" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="16" y1="22" x2="16" y2="29" stroke="#ff3c5a" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="3"  y1="16" x2="10" y2="16" stroke="#ff3c5a" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="22" y1="16" x2="29" y2="16" stroke="#ff3c5a" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="16" cy="16" r="2" fill="#ff3c5a"/>
+    `);
+}
+function makeSVG_Halo(){
+    return svgWrap(`
+        <ellipse cx="16" cy="16" rx="13" ry="5" stroke="#a78bfa" stroke-width="1.5" fill="none"/>
+        <circle cx="16" cy="16" r="3" fill="#a78bfa"/>
+        <line x1="16" y1="13" x2="16" y2="6"  stroke="#a78bfa" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+        <line x1="16" y1="19" x2="16" y2="26" stroke="#a78bfa" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+    `);
+}
+function makeSVG_StarAim(){
+    return svgWrap(`
+        <polygon points="16,3 18,13 28,13 20,19 23,29 16,23 9,29 12,19 4,13 14,13" stroke="#ffd700" stroke-width="0.8" fill="rgba(255,215,0,0.15)"/>
+        <circle cx="16" cy="16" r="2.5" fill="#ffd700"/>
+        <circle cx="16" cy="16" r="1" fill="#fff"/>
+    `);
+}
+ 
+/* Apply crosshair */
+function applyCrosshairTo(aim){
+    if(!data.mods.crosshair) return;
+    const settings = data.crosshair;
+ 
+    aim.style.position = "absolute";
+    aim.style.top      = "50%";
+    aim.style.left     = "50%";
+    aim.style.transform = "translate(-50%,-50%)";
+    aim.style.zIndex   = "9999";
+ 
+    const preset = crosshairPresets[settings.preset];
+ 
+    if(settings.preset === "custom" && settings.customURL){
+        aim.style.backgroundImage = `url('${settings.customURL}')`;
+        aim.style.backgroundRepeat = "no-repeat";
+        aim.style.backgroundPosition = "center";
+        aim.style.backgroundSize = "contain";
+        aim.style.backgroundColor = "transparent";
+        aim.style.border = "none";
+        aim.style.borderRadius = "0";
+        aim.style.width  = `${32 * settings.size}px`;
+        aim.style.height = `${32 * settings.size}px`;
+        return;
+    }
+ 
+    if(!preset) return;
+ 
+    if(preset.svg || preset.image){
+        const url = preset.svg || preset.image;
+        aim.style.backgroundImage = `url('${url}')`;
+        aim.style.backgroundRepeat = "no-repeat";
+        aim.style.backgroundPosition = "center";
+        aim.style.backgroundSize = "contain";
+        aim.style.backgroundColor = "transparent";
+        aim.style.border = "none";
+        aim.style.borderRadius = "0";
+        aim.style.width  = `${32 * settings.size}px`;
+        aim.style.height = `${32 * settings.size}px`;
+    } else {
+        aim.style.backgroundImage = "";
+        aim.style.backgroundColor = preset.style.backgroundColor;
+        aim.style.border = preset.style.border || "none";
+        aim.style.borderRadius = preset.style.borderRadius || "0";
+        aim.style.width  = `${preset.style.width  * settings.size}px`;
+        aim.style.height = `${preset.style.height * settings.size}px`;
+    }
+}
+ 
+setInterval(() => {
+    if(!data.mods.crosshair) return;
+    let aim = document.querySelector(".aim") || document.querySelector(".sights");
+    if(aim) applyCrosshairTo(aim);
+}, 100);
+ 
+function buildCrosshairSettings(){
+    const current = data.crosshair;
+    settingsPage.insertAdjacentHTML("beforeend", `
+        <div class="mf-settings-title">⊕ Crosshair (${Object.keys(crosshairPresets).length} presets)</div>
+        <div class="mf-setting"><label>Preset</label><select id="mf-crosshair-preset"></select></div>
+        <div class="mf-setting"><label>Custom URL</label><input id="mf-crosshair-url" type="text"></div>
+        <div class="mf-setting"><label>Size</label><input id="mf-crosshair-size" type="range" min="0.2" max="4" step="0.1"></div>
+        <div class="mf-setting" style="flex-direction:column;align-items:center;gap:0.8vh;">
+            <label>Preview</label>
+            <div id="mf-crosshair-preview-box"><div id="mf-crosshair-preview"></div></div>
+        </div>
+    `);
+ 
+    const presetSelect = document.getElementById("mf-crosshair-preset");
+    Object.entries(crosshairPresets).forEach(([key, val]) => {
+        const opt = document.createElement("option");
+        opt.value = key; opt.textContent = val.label;
+        presetSelect.appendChild(opt);
+    });
+    const custom = document.createElement("option");
+    custom.value = "custom"; custom.textContent = "Custom URL";
+    presetSelect.appendChild(custom);
+ 
+    presetSelect.value = current.preset;
+    document.getElementById("mf-crosshair-url").value  = current.customURL;
+    document.getElementById("mf-crosshair-size").value = current.size;
+ 
+    const preview = document.getElementById("mf-crosshair-preview");
+    function updatePreview(){
+        preview.style = "";
+        applyCrosshairTo(preview);
+    }
+    presetSelect.onchange = e => { data.crosshair.preset = e.target.value; save(); updatePreview(); };
+    document.getElementById("mf-crosshair-url").onchange  = e => { data.crosshair.customURL = e.target.value; save(); updatePreview(); };
+    document.getElementById("mf-crosshair-size").oninput  = e => { data.crosshair.size = parseFloat(e.target.value); save(); updatePreview(); };
+    updatePreview();
+}
+ 
+/* ═══════════════════════════════════════════
+   TEXTURE PACK
+═══════════════════════════════════════════ */
+const overrides = {};
+function overrideURL(url){ for(const orig in overrides){ if(url.includes(orig)) return overrides[orig]; } return url; }
+function isGameActive(){ return !document.querySelector(".home"); }
+ 
+const imgSrcDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
+Object.defineProperty(HTMLImageElement.prototype, "src", {
+    set(value){ if(data.mods.textures && isGameActive()) value = overrideURL(value); return imgSrcDesc.set.call(this, value); },
+    get(){ return imgSrcDesc.get.call(this); }
+});
+ 
+const origSetAttr = Element.prototype.setAttribute;
+Element.prototype.setAttribute = function(name, value){
+    if(data.mods.textures && name === "src" && isGameActive()) value = overrideURL(value);
+    return origSetAttr.call(this, name, value);
+};
+ 
+function reloadAllImages(){ if(!data.mods.textures) return; document.querySelectorAll(".game img").forEach(img => { img.src = overrideURL(img.src); }); }
+function updateTextureStatus(){ const s = document.getElementById("mf-texture-status"); if(!s) return; s.textContent = !data.mods.textures ? "Mod Disabled" : Object.keys(overrides).length ? "✓ Loaded" : "No pack loaded"; }
+function resetAllTextureOverrides(){ for(const k in overrides) delete overrides[k]; if(data.textures) data.textures.overrides = {}; save(); updateTextureStatus(); document.querySelectorAll("img").forEach(img => { img.src = img.src; }); alert("Celestar: Texture pack removed"); }
+function loadTexturePack(e){ const file = e.target.files[0]; if(!file) return; if(!data.mods.textures){ data.mods.textures = true; save(); } file.text().then(text => { const lines = text.split("\n"); const status = document.getElementById("mf-texture-status"); status.textContent = "Loading…"; let loaded = false; for(const line of lines){ const idx = line.indexOf(">"); if(idx === -1) continue; const texture = line.slice(0, idx).trim(); const dataURL = line.slice(idx + 1).trim(); if(texture && dataURL){ overrides[texture] = dataURL; loaded = true; } } if(loaded){ updateTextureStatus(); saveTextureOverrides(); reloadAllImages(); } else { status.textContent = "Failed"; } }); }
+function saveTextureOverrides(){ if(!data.textures || typeof data.textures !== "object") data.textures = {}; data.textures.overrides = {...overrides}; save(); }
+const savedOverrides = data.textures?.overrides;
+if(savedOverrides){ Object.assign(overrides, savedOverrides); reloadAllImages(); }
+ 
+function buildTextureSettings(){
+    settingsPage.insertAdjacentHTML("beforeend", `
+        <div class="mf-settings-title">🎨 Texture Pack</div>
+        <div class="mf-setting"><label>Upload Pack</label><input type="file" id="mf-texture-upload" accept=".txt"></div>
+        <div class="mf-setting"><label>Status</label><span id="mf-texture-status">No pack loaded</span></div>
+        <div class="mf-setting"><button id="mf-reset-textures">Reset Texture Pack</button></div>
+    `);
+    document.getElementById("mf-texture-upload").addEventListener("change", loadTexturePack);
+    document.getElementById("mf-reset-textures").addEventListener("click", resetAllTextureOverrides);
+    updateTextureStatus();
+}
+ 
+/* ═══════════════════════════════════════════
+   KEYSTROKES — 15 LAYOUTS + 8 THEMES
+═══════════════════════════════════════════ */
+if(!data.keystrokes.size){ data.keystrokes = {...defaultData.keystrokes}; save(); }
+ 
+const ks = document.createElement("div");
+ks.className = "mf-keystrokes";
+document.body.appendChild(ks);
+ 
+const keystrokeLayouts = {
+    "wasd": `
+        <div class="row"><div class="key shift-key">SHF</div><div class="key" data-key="KeyW">W</div><div class="key crouch-key">C</div></div>
+        <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
+        <div class="row"><div class="key space" data-key="Space">_______</div></div>
+    `,
+    "compact": `
+        <div class="row"><div class="key" data-key="KeyW">W</div></div>
+        <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
+    `,
+    "mouse_only": `
+        <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
+    `,
+    "full": `
+        <div class="row"><div class="key shift-key">SHF</div><div class="key" data-key="KeyW">W</div><div class="key crouch-key">C</div></div>
+        <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
+        <div class="row"><div class="key space" data-key="Space">SPACE</div></div>
+        <div class="row"><div class="key" data-key="Digit1">1</div><div class="key" data-key="Digit2">2</div><div class="key" data-key="Digit3">3</div><div class="key" data-key="Digit4">4</div></div>
+    `,
+    "arrows": `
+        <div class="row"><div class="key" data-key="ArrowUp">↑</div></div>
+        <div class="row"><div class="key" data-key="ArrowLeft">←</div><div class="key" data-key="ArrowDown">↓</div><div class="key" data-key="ArrowRight">→</div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
+    `,
+    /* ── 10 new layouts ── */
+    "cps_big": `
+        <div class="row"><div class="key extra-wide tall cps" data-key="LMB" style="font-size:1.6vh">LEFT<br><span class="cps-disp" style="font-size:1.3vh">0</span></div><div class="key extra-wide tall cps" data-key="RMB" style="font-size:1.6vh">RIGHT<br><span class="cps-disp" style="font-size:1.3vh">0</span></div></div>
+    `,
+    "wasd_no_mouse": `
+        <div class="row"><div class="key" data-key="KeyW">W</div></div>
+        <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
+        <div class="row"><div class="key space" data-key="Space">___</div></div>
+    `,
+    "pvp_pro": `
+        <div class="row"><div class="key shift-key">⬆SHF</div><div class="key" data-key="KeyW">W</div><div class="key crouch-key">⬇C</div></div>
+        <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
+        <div class="row"><div class="key" data-key="Digit1">1</div><div class="key" data-key="Digit2">2</div><div class="key" data-key="Digit3">3</div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB">L<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">R<br><span class="cps-disp">0</span></div></div>
+    `,
+    "hotbar": `
+        <div class="row">
+            <div class="key" data-key="Digit1">1</div>
+            <div class="key" data-key="Digit2">2</div>
+            <div class="key" data-key="Digit3">3</div>
+            <div class="key" data-key="Digit4">4</div>
+            <div class="key" data-key="Digit5">5</div>
+        </div>
+        <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
+    `,
+    "survival": `
+        <div class="row"><div class="key shift-key">⇧</div><div class="key" data-key="KeyW">W</div><div class="key crouch-key">↙</div></div>
+        <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
+        <div class="row"><div class="key space" data-key="Space">JUMP</div></div>
+        <div class="row"><div class="key" data-key="Digit1">1</div><div class="key" data-key="Digit2">2</div><div class="key" data-key="Digit3">3</div><div class="key" data-key="Digit4">4</div><div class="key" data-key="Digit5">5</div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
+    `,
+    "minimal_dot": `
+        <div class="row"><div class="key" data-key="KeyW" style="width:2.5vh;height:2.5vh;font-size:1vh">W</div></div>
+        <div class="row"><div class="key" data-key="KeyA" style="width:2.5vh;height:2.5vh;font-size:1vh">A</div><div class="key" data-key="KeyS" style="width:2.5vh;height:2.5vh;font-size:1vh">S</div><div class="key" data-key="KeyD" style="width:2.5vh;height:2.5vh;font-size:1vh">D</div></div>
+    `,
+    "space_wasd": `
+        <div class="row"><div class="key" data-key="KeyW" style="background:rgba(0,207,255,0.08);border-color:rgba(0,207,255,0.4)">↑W</div></div>
+        <div class="row">
+            <div class="key" data-key="KeyA" style="background:rgba(123,47,255,0.08);border-color:rgba(123,47,255,0.4)">←A</div>
+            <div class="key" data-key="KeyS" style="background:rgba(0,207,255,0.08);border-color:rgba(0,207,255,0.4)">↓S</div>
+            <div class="key" data-key="KeyD" style="background:rgba(123,47,255,0.08);border-color:rgba(123,47,255,0.4)">→D</div>
+        </div>
+        <div class="row"><div class="key wide cps" data-key="LMB" style="border-color:rgba(0,207,255,0.4)">✦L<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB" style="border-color:rgba(123,47,255,0.4)">✦R<br><span class="cps-disp">0</span></div></div>
+    `,
+    "fps_only": `
+        <div class="row"><div class="key shift-key">⬆</div><div class="key crouch-key">⬇</div></div>
+        <div class="row"><div class="key" data-key="KeyW">W</div></div>
+        <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB">🖱L<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">🖱R<br><span class="cps-disp">0</span></div></div>
+    `,
+    "three_key": `
+        <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyW">W</div><div class="key" data-key="KeyD">D</div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
+    `,
+    "full_plus_slots": `
+        <div class="row"><div class="key shift-key">SHF</div><div class="key" data-key="KeyW">W</div><div class="key crouch-key">C</div></div>
+        <div class="row"><div class="key" data-key="KeyA">A</div><div class="key" data-key="KeyS">S</div><div class="key" data-key="KeyD">D</div></div>
+        <div class="row"><div class="key space" data-key="Space">SPACE</div></div>
+        <div class="row"><div class="key" data-key="Digit1">1</div><div class="key" data-key="Digit2">2</div><div class="key" data-key="Digit3">3</div><div class="key" data-key="Digit4">4</div><div class="key" data-key="Digit5">5</div></div>
+        <div class="row"><div class="key" data-key="Digit6">6</div><div class="key" data-key="Digit7">7</div><div class="key" data-key="Digit8">8</div><div class="key" data-key="Digit9">9</div></div>
+        <div class="row"><div class="key wide cps" data-key="LMB">LMB<br><span class="cps-disp">0</span></div><div class="key wide cps" data-key="RMB">RMB<br><span class="cps-disp">0</span></div></div>
+    `,
+};
+ 
+function buildKeystrokesHTML(layout){
+    ks.innerHTML = `<div class="key-container">${keystrokeLayouts[layout] || keystrokeLayouts["wasd"]}</div>`;
+}
+ 
+buildKeystrokesHTML(data.keystrokes.layout || "wasd");
+ 
+function applyKeystrokes(){
+    if(!data.mods.keystrokes){ ks.style.display = "none"; return; }
+    ks.style.display = "flex";
+    const s = data.keystrokes;
+    ks.style.left      = s.x + "vw";
+    ks.style.bottom    = s.y + "vh";
+    ks.style.transform = `scale(${s.size})`;
+    ks.setAttribute("mf-theme", s.theme);
+ 
+    document.documentElement.style.setProperty("--mf-pressed-bg",   s.pressedBG);
+    document.documentElement.style.setProperty("--mf-pressed-text",  s.pressedText);
+ 
+    document.querySelectorAll(".mf-keystrokes .cps-disp").forEach(e => {
+        e.style.display = s.showCPS ? "block" : "none";
+    });
+ 
+    if(s.arrows){
+        const w = document.querySelector('[data-key="KeyW"]');
+        const a = document.querySelector('[data-key="KeyA"]');
+        const sd = document.querySelector('[data-key="KeyS"]');
+        const d = document.querySelector('[data-key="KeyD"]');
+        if(w) w.textContent = "↑"; if(a) a.textContent = "←"; if(sd) sd.textContent = "↓"; if(d) d.textContent = "→";
+    }
+}
+ 
+applyKeystrokes();
+ 
+const shiftKey  = () => document.querySelector(".shift-key");
+const crouchKey = () => document.querySelector(".crouch-key");
+ 
+document.addEventListener("keydown", e => {
+    if(!data.mods.keystrokes) return;
+    if(e.code === data.keystrokes.keys.shift  && shiftKey())  shiftKey().classList.add("active");
+    if(e.code === data.keystrokes.keys.crouch && crouchKey()) crouchKey().classList.add("active");
+    const key = document.querySelector(`[data-key="${e.code}"]`);
+    if(key) key.classList.add("active");
+});
+document.addEventListener("keyup", e => {
+    if(shiftKey()  && e.code === data.keystrokes.keys.shift)  shiftKey().classList.remove("active");
+    if(crouchKey() && e.code === data.keystrokes.keys.crouch) crouchKey().classList.remove("active");
+    const key = document.querySelector(`[data-key="${e.code}"]`);
+    if(key) key.classList.remove("active");
+});
+ 
+const lmb = [], rmb = [];
+document.addEventListener("mousedown", e => {
+    if(!data.mods.keystrokes) return;
+    const now = performance.now();
+    if(e.button === 0){ lmb.push(now); document.querySelector('[data-key="LMB"]')?.classList.add("active"); }
+    if(e.button === 2){ rmb.push(now); document.querySelector('[data-key="RMB"]')?.classList.add("active"); }
+});
+document.addEventListener("mouseup", e => {
+    if(e.button === 0) document.querySelector('[data-key="LMB"]')?.classList.remove("active");
+    if(e.button === 2) document.querySelector('[data-key="RMB"]')?.classList.remove("active");
+});
+document.addEventListener("contextmenu", e => e.preventDefault());
+ 
+function cpsLoop(){
+    const now = performance.now();
+    while(lmb.length && lmb[0] < now - 1000) lmb.shift();
+    while(rmb.length && rmb[0] < now - 1000) rmb.shift();
+    document.querySelectorAll('[data-key="LMB"] .cps-disp').forEach(e => e.textContent = lmb.length);
+    document.querySelectorAll('[data-key="RMB"] .cps-disp').forEach(e => e.textContent = rmb.length);
+    requestAnimationFrame(cpsLoop);
+}
+cpsLoop();
+ 
+let dragging = false;
+ks.addEventListener("mousedown", () => dragging = true);
+document.addEventListener("mouseup", () => dragging = false);
+document.addEventListener("mousemove", e => {
+    if(!dragging) return;
+    data.keystrokes.x = (e.clientX / innerWidth) * 100;
+    data.keystrokes.y = ((innerHeight - e.clientY) / innerHeight) * 100;
+    applyKeystrokes(); save();
+});
+ 
+function buildKeystrokesSettings(){
+    const s = data.keystrokes;
+    settingsPage.insertAdjacentHTML("beforeend", `
+        <div class="mf-settings-title">⌨ Keystrokes (${Object.keys(keystrokeLayouts).length} layouts)</div>
+        <div class="mf-setting"><label>Layout</label>
+            <select id="ks-layout">
+                <option value="wasd">WASD (Default)</option>
+                <option value="compact">Compact</option>
+                <option value="full">Full (+ 1-4)</option>
+                <option value="mouse_only">Mouse Only</option>
+                <option value="arrows">Arrow Keys</option>
+                <option value="cps_big">Big CPS</option>
+                <option value="wasd_no_mouse">WASD No Mouse</option>
+                <option value="pvp_pro">PVP Pro</option>
+                <option value="hotbar">Hotbar 1-5</option>
+                <option value="survival">Survival Full</option>
+                <option value="minimal_dot">Minimal Dot</option>
+                <option value="space_wasd">Space WASD</option>
+                <option value="fps_only">FPS Mode</option>
+                <option value="three_key">3-Key (AWD)</option>
+                <option value="full_plus_slots">Full + Slots 1-9</option>
+            </select>
+        </div>
+        <div class="mf-setting"><label>Theme</label>
+            <select id="ks-theme">
+                <option value="default">Default (Blue)</option>
+                <option value="celestar">Celestar</option>
+                <option value="rainbow">Rainbow</option>
+                <option value="neon">Neon Pink</option>
+                <option value="glass">Glass</option>
+                <option value="dark">Dark</option>
+                <option value="space">Space ✦ NEW</option>
+                <option value="cyberpunk">Cyberpunk ✦ NEW</option>
+                <option value="ember">Ember ✦ NEW</option>
+                <option value="frost">Frost ✦ NEW</option>
+                <option value="military">Military ✦ NEW</option>
+            </select>
+        </div>
+        <div class="mf-setting"><label>Size</label><input type="range" id="ks-size" min="0.6" max="2" step="0.1"></div>
+        <div class="mf-setting"><label>Show CPS</label><input type="checkbox" id="ks-cps"></div>
+        <div class="mf-setting"><label>Border</label><input type="checkbox" id="ks-border"></div>
+        <div class="mf-setting"><label>Border Thickness</label><input type="range" id="ks-border-thickness" min="0" max="0.4" step="0.02"></div>
+        <div class="mf-setting"><label>Border Colour</label><input type="text" id="ks-border-colour"></div>
+        <div class="mf-setting"><label>Pressed BG</label><input type="text" id="ks-pressed-bg"></div>
+        <div class="mf-setting"><label>Pressed Text</label><input type="text" id="ks-pressed-text"></div>
+        <div class="mf-setting"><label>Arrow Icons</label><input type="checkbox" id="ks-arrows"></div>
+    `);
+ 
+    document.getElementById("ks-layout").value           = s.layout || "wasd";
+    document.getElementById("ks-theme").value            = s.theme;
+    document.getElementById("ks-size").value             = s.size;
+    document.getElementById("ks-cps").checked            = s.showCPS;
+    document.getElementById("ks-border").checked         = s.border;
+    document.getElementById("ks-border-thickness").value = s.borderThickness;
+    document.getElementById("ks-border-colour").value    = s.borderColour;
+    document.getElementById("ks-pressed-bg").value       = s.pressedBG;
+    document.getElementById("ks-pressed-text").value     = s.pressedText;
+    document.getElementById("ks-arrows").checked         = s.arrows;
+ 
+    document.getElementById("ks-layout").onchange = e => { data.keystrokes.layout = e.target.value; buildKeystrokesHTML(e.target.value); applyKeystrokes(); save(); };
+    document.getElementById("ks-theme").onchange = e => { data.keystrokes.theme = e.target.value; applyKeystrokes(); save(); };
+    document.getElementById("ks-size").oninput   = e => { data.keystrokes.size  = parseFloat(e.target.value); applyKeystrokes(); save(); };
+    document.getElementById("ks-cps").onchange   = e => { data.keystrokes.showCPS = e.target.checked; applyKeystrokes(); save(); };
+    document.getElementById("ks-border").onchange = e => { data.keystrokes.border = e.target.checked; applyKeystrokes(); save(); };
+    document.getElementById("ks-border-thickness").oninput = e => { data.keystrokes.borderThickness = parseFloat(e.target.value); applyKeystrokes(); save(); };
+    document.getElementById("ks-border-colour").onchange   = e => { data.keystrokes.borderColour = e.target.value; applyKeystrokes(); save(); };
+    document.getElementById("ks-pressed-bg").onchange      = e => { data.keystrokes.pressedBG   = e.target.value; applyKeystrokes(); save(); };
+    document.getElementById("ks-pressed-text").onchange    = e => { data.keystrokes.pressedText  = e.target.value; applyKeystrokes(); save(); };
+    document.getElementById("ks-arrows").onchange   = e => { data.keystrokes.arrows = e.target.checked; applyKeystrokes(); save(); };
+}
+ 
+/* ═══════════════════════════════════════════
+   ZOOM
+═══════════════════════════════════════════ */
+let zooming = false;
+function applyZoom(){
+    if(!data.mods.zoom) return;
+    const canvas = document.querySelector(".game-canvas");
+    if(!canvas) return;
+    canvas.style.transformOrigin = "center center";
+    canvas.style.transition = "transform 0.15s ease";
+    canvas.style.transform  = zooming ? `scale(${data.zoom.power || 2.2})` : "scale(1)";
+}
+setInterval(applyZoom, 100);
+document.addEventListener("keydown", e => { if(e.key.toLowerCase() === "v") zooming = true; });
+document.addEventListener("keyup",   e => { if(e.key.toLowerCase() === "v") { zooming = false; applyZoom(); } });
+ 
+function buildZoomSettings(){
+    settingsPage.insertAdjacentHTML("beforeend", `
+        <div class="mf-settings-title">🔭 Zoom</div>
+        <div class="mf-setting"><label>Zoom Power</label><input type="range" id="zoom-power" min="1.2" max="5" step="0.1"></div>
+        <div class="mf-setting"><label style="color:var(--cel-accent)" id="zoom-val">x${data.zoom.power || 2.2}</label></div>
+        <div class="mf-setting"><label style="color:var(--cel-muted);font-size:1.2vh">Hold V to zoom</label></div>
+    `);
+    document.getElementById("zoom-power").value = data.zoom.power || 2.2;
+    document.getElementById("zoom-power").oninput = e => {
+        data.zoom.power = parseFloat(e.target.value);
+        document.getElementById("zoom-val").textContent = `x${data.zoom.power.toFixed(1)}`;
+        save();
+    };
+}
+ 
+/* ═══════════════════════════════════════════
+   FPS + CPS COUNTERS
+═══════════════════════════════════════════ */
+let fpsDiv = null, lastTime = performance.now(), frames = 0;
+function injectFPS(){
+    if(!data.mods.fps) return;
+    const stats = document.querySelector('.chat .stats');
+    if(!stats) return;
+    if(stats.querySelector('.minefun-fps')){ fpsDiv = stats.querySelector('.minefun-fps'); return; }
+    fpsDiv = document.createElement("div");
+    fpsDiv.className = "minefun-fps";
+    fpsDiv.innerHTML = `<span class="coord-symbol">FPS</span><span class="fps-value">0</span>`;
+    stats.appendChild(fpsDiv);
+}
+function fpsLoop(now){
+    if(!data.mods.fps){ if(fpsDiv) fpsDiv.remove(); requestAnimationFrame(fpsLoop); return; }
+    frames++;
+    if(now - lastTime >= 1000){ const fps = Math.round((frames * 1000) / (now - lastTime)); frames = 0; lastTime = now; if(fpsDiv) fpsDiv.querySelector(".fps-value").textContent = fps; }
+    requestAnimationFrame(fpsLoop);
+}
+requestAnimationFrame(fpsLoop);
+setInterval(injectFPS, 250);
+ 
+let cpsDiv = null, cpsClicks = [];
+function injectCPS(){
+    if(!data.mods.cps) return;
+    const stats = document.querySelector('.chat .stats');
+    if(!stats) return;
+    if(stats.querySelector('.minefun-cps')){ cpsDiv = stats.querySelector('.minefun-cps'); return; }
+    cpsDiv = document.createElement("div");
+    cpsDiv.className = "minefun-cps";
+    cpsDiv.innerHTML = `<span class="coord-symbol">CPS</span><span class="cps-value">0</span>`;
+    stats.appendChild(cpsDiv);
+}
+document.addEventListener("mousedown", () => { if(!data.mods.cps) return; cpsClicks.push(Date.now()); });
+function cpsStatsLoop(){
+    if(!data.mods.cps){ if(cpsDiv) cpsDiv.remove(); requestAnimationFrame(cpsStatsLoop); return; }
+    const now = Date.now();
+    cpsClicks = cpsClicks.filter(t => now - t <= 1000);
+    if(cpsDiv) cpsDiv.querySelector(".cps-value").textContent = cpsClicks.length;
+    requestAnimationFrame(cpsStatsLoop);
+}
+requestAnimationFrame(cpsStatsLoop);
+setInterval(injectCPS, 250);
+ 
+/* ═══════════════════════════════════════════
+   CHAT
+═══════════════════════════════════════════ */
+function applyChat(){
+    if(!data.mods.chat) return;
+    const chat = document.querySelector(".chat");
+    if(!chat) return;
+    const positions = {
+        "left":       { left:"0",  right:"auto", bottom:"0",  top:"auto",  transform:"none" },
+        "right":      { left:"auto",right:"0",   bottom:"0",  top:"auto",  transform:"none" },
+        "center":     { left:"50%",right:"auto", bottom:"0",  top:"auto",  transform:"translateX(-50%)" },
+        "top_left":   { left:"0",  right:"auto", bottom:"auto",top:"0",   transform:"none" },
+        "top_center": { left:"50%",right:"auto", bottom:"auto",top:"0",   transform:"translateX(-50%)" },
+        "top_right":  { left:"auto",right:"0",   bottom:"auto",top:"0",   transform:"none" },
+    };
+    const pos = positions[data.chat.position] || positions["left"];
+    chat.style.position  = "fixed";
+    chat.style.left      = pos.left;
+    chat.style.right     = pos.right;
+    chat.style.bottom    = pos.bottom;
+    chat.style.top       = pos.top;
+    chat.style.transform = pos.transform;
+    chat.style.zIndex    = "9999";
+    const messages = document.querySelector(".messages");
+    if(messages) messages.style.maxHeight = data.chat.longerChat ? "60vh" : "";
+}
+const chatWait = setInterval(() => { if(!document.querySelector(".chat")) return; clearInterval(chatWait); applyChat(); }, 500);
+setInterval(applyChat, 1000);
+ 
+function buildChatSettings(){
+    settingsPage.insertAdjacentHTML("beforeend", `
+        <div class="mf-settings-title">💬 Chat</div>
+        <div class="mf-setting"><label>Longer Chat</label><input type="checkbox" id="chat-longer"></div>
+        <div class="mf-setting"><label>Position</label>
+            <select id="chat-pos">
+                <option value="left">Left (Default)</option>
+                <option value="right">Right</option>
+                <option value="center">Center</option>
+                <option value="top_left">Top Left</option>
+                <option value="top_center">Top Center</option>
+                <option value="top_right">Top Right</option>
+            </select>
+        </div>
+    `);
+    document.getElementById("chat-longer").checked  = data.chat.longerChat;
+    document.getElementById("chat-pos").value       = data.chat.position || "left";
+    document.getElementById("chat-longer").onchange = e => { data.chat.longerChat = e.target.checked; save(); applyChat(); };
+    document.getElementById("chat-pos").onchange    = e => { data.chat.position   = e.target.value;   save(); applyChat(); };
+}
+ 
+/* ═══════════════════════════════════════════
+   THE WAR UTILS
+═══════════════════════════════════════════ */
+function buildTheWarSettings(){
+    settingsPage.insertAdjacentHTML("beforeend", `
+        <div class="mf-settings-title">⚔ The War Utils</div>
+        <div class="mf-setting"><label>KDR Indicator</label><input type="checkbox" id="war-kd"></div>
+    `);
+    document.getElementById("war-kd").checked = data.thewar.kdrIndicator || false;
+    document.getElementById("war-kd").onchange = e => { data.thewar.kdrIndicator = e.target.checked; save(); applyKDDisplay(); };
+}
+function applyKDDisplay(){
+    if(!data.thewar.kdrIndicator) return;
+    const waitStats = setInterval(() => {
+        const stats = document.querySelector(".game .stats");
+        if(!stats) return;
+        const killSection  = stats.querySelector(".stat-section .kill-icon")?.parentElement;
+        const deathSection = stats.querySelector(".stat-section .death-icon")?.parentElement;
+        if(!killSection || !deathSection) return;
+        clearInterval(waitStats);
+        if(!stats.querySelector(".kd-display")){
+            const kdDiv = document.createElement("div");
+            kdDiv.className = "kd-display";
+            kdDiv.style.cssText = `background:linear-gradient(135deg,rgba(0,207,255,0.2),rgba(123,47,255,0.2));border:2px solid rgba(0,207,255,0.5);border-radius:10px;min-width:130px;margin-left:23px;padding:0.5vh 1vh;color:white;font-family:'Rajdhani',sans-serif;font-size:6vh;text-align:center;box-shadow:0 0 20px rgba(0,207,255,0.3);backdrop-filter:blur(4px);`;
+            stats.appendChild(kdDiv);
+            updateKD();
+        }
+    }, 200);
+}
+applyKDDisplay();
+function updateKD(){
+    const stats = document.querySelector(".game .stats");
+    if(!stats) return;
+    const killSection  = stats.querySelector(".stat-section .kill-icon")?.parentElement;
+    const deathSection = stats.querySelector(".stat-section .death-icon")?.parentElement;
+    const kills  = killSection  ? parseInt(killSection.textContent.trim())  || 0 : 0;
+    const deaths = deathSection ? parseInt(deathSection.textContent.trim()) || 0 : 0;
+    const kdDiv  = stats.querySelector(".kd-display");
+    if(!kdDiv){ applyKDDisplay(); return; }
+    kdDiv.textContent = `KDR ${deaths === 0 ? kills : (kills / deaths).toFixed(1)}`;
+}
+setInterval(updateKD, 300);
+ 
+/* ═══════════════════════════════════════════
+   DAMAGE VIGNETTE
+═══════════════════════════════════════════ */
+function buildHpHitColorSettings(){
+    settingsPage.insertAdjacentHTML("beforeend", `
+        <div class="mf-settings-title">💢 Damage Vignette</div>
+        <div class="mf-setting"><label>Colour</label><input type="text" id="hp-hit-color" placeholder="#ff0000"></div>
+    `);
+    document.getElementById("hp-hit-color").value = data.hpHitColor.color;
+    document.getElementById("hp-hit-color").onchange = e => {
+        const hex = e.target.value.trim();
+        if(!/^#([0-9A-Fa-f]{6})$/.test(hex)){ alert("Enter valid hex e.g. #ff0000"); return; }
+        data.hpHitColor.color = hex; save(); applyHpHitColor();
+    };
+}
+function applyHpHitColor(){
+    const hex = data.hpHitColor.color;
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    let styleEl = document.getElementById("mf-hp-hit-style");
+    if(!styleEl){ styleEl = document.createElement("style"); styleEl.id = "mf-hp-hit-style"; document.head.appendChild(styleEl); }
+    styleEl.textContent = `.hp-hit { background: radial-gradient(49.99% 49.99% at 50.01% 50.01%, rgba(${r},${g},${b},0.02) 0% 66.66%, rgba(${r},${g},${b},0.02) 89.23%, rgba(${r},${g},${b},0.2) 100%) !important; }`;
+}
+setInterval(() => { if(data.mods.hpHitColor) applyHpHitColor(); }, 500);
+ 
+/* ═══════════════════════════════════════════
+   SPACE CHESTS — COSMIC TIER SYSTEM
+═══════════════════════════════════════════ */
+function getChestTier(itemCount){
+    if(itemCount <= 9  || itemCount === 18) return "wood";
+    if(itemCount <= 18 || itemCount === 27) return "iron";
+    if(itemCount <= 36 || itemCount === 36) return "gold";
+    return "diamond";
+}
+ 
+function addStarsToChest(chest, tier){
+    if(chest.querySelector(".chest-star")) return;
+    const colors = { wood:"#cd853f", iron:"#7ab0d0", gold:"#ffd700", diamond:"#00bfff" };
+    const count  = { wood:2, iron:3, gold:5, diamond:8 }[tier];
+    const color  = colors[tier];
+    const w = chest.offsetWidth  || 120;
+    const h = chest.offsetHeight || 80;
+    for(let i = 0; i < count; i++){
+        const star = document.createElement("span");
+        star.className = "chest-star";
+        star.textContent = ["✦","★","·","✧","*"][Math.floor(Math.random()*5)];
+        star.style.cssText = `left:${Math.random()*90}%;top:${Math.random()*90}%;color:${color};animation-delay:${Math.random()*2}s;position:absolute;font-size:${6+Math.random()*6}px;pointer-events:none;`;
+        chest.appendChild(star);
+    }
+    if(tier === "gold" || tier === "diamond"){
+        const runes = ["⬡","◈","⟁","⬟","⌬"];
+        for(let i = 0; i < (tier === "diamond" ? 4 : 2); i++){
+            const rune = document.createElement("span");
+            rune.className = "chest-rune";
+            rune.textContent = runes[Math.floor(Math.random()*runes.length)];
+            rune.style.cssText = `left:${5+Math.random()*85}%;top:${5+Math.random()*85}%;position:absolute;font-size:10px;pointer-events:none;animation-delay:${Math.random()*3}s;`;
+            chest.appendChild(rune);
+        }
+    }
+}
+ 
+function updateBetterChests(){
+    if(!data.mods.betterChests) return;
+    document.querySelectorAll(".chest").forEach(chest => {
+        const items    = chest.querySelectorAll(".item");
+        const count    = items.length;
+        const tier     = getChestTier(count);
+        const tierClass= `mf-chest-${tier}`;
+ 
+        if(!chest.classList.contains("mf-space-chest")){
+            chest.classList.add("mf-space-chest", tierClass);
+            chest.style.position = "relative";
+            addStarsToChest(chest, tier);
+        }
+ 
+        items.forEach(item => {
+            if(!item.classList.contains("mf-chest-item")){
+                item.classList.add("mf-chest-item");
+            }
+        });
+    });
+}
+setInterval(updateBetterChests, 150);
+ 
+/* ═══════════════════════════════════════════
+   SPACE INVENTORY
+═══════════════════════════════════════════ */
+function updateSpaceInventory(){
+    if(!data.mods.spaceInventory) return;
+    const inventory = document.querySelector(".inventory") || document.querySelector(".player-inventory") || document.querySelector("[class*='inventory']");
+    if(!inventory) return;
+    if(!inventory.classList.contains("mf-space-inventory")){
+        inventory.classList.add("mf-space-inventory");
+    }
+}
+setInterval(updateSpaceInventory, 200);
+ 
+/* ═══════════════════════════════════════════
+   HOME TIP
+═══════════════════════════════════════════ */
+function updateHomeModTip(){
+    const home = document.querySelector(".home");
+    let tip = document.getElementById("mf-home-tip");
+    if(home){
+        if(!tip){ tip = document.createElement("div"); tip.id = "mf-home-tip"; document.body.appendChild(tip); }
+        const keyName = formatKey(data.keybinds.menu);
+        tip.innerHTML = `✦ Press <span>${keyName}</span> for Celestar v3.0`;
+    } else if(tip){ tip.remove(); }
+}
+setInterval(updateHomeModTip, 200);
+ 
+/* ═══════════════════════════════════════════
+   FINAL LOOPS
+═══════════════════════════════════════════ */
+setInterval(applyKeystrokes, 500);
+ 
+})();
